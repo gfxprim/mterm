@@ -1,0 +1,12 @@
+10 10
+this is\n
+very long\n
+text that\n
+is filling\n
+buffer\n
+\e[2J\e[H
+this is\n
+very long\n
+text that\n
+showing\n
+the buffer\n
