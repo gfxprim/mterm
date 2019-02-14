@@ -73,9 +73,7 @@ int main(int argc, char *argv[])
 
 	struct mt_parser parser;
 
-	memset(&parser, 0, sizeof(parser));
-
-	parser.sbuf = sbuf;
+	mt_parser_init(&parser, sbuf, 0, 0);
 
 	while (fgets(buf, sizeof(buf), f)) {
 		make_buf(buf);
@@ -85,6 +83,9 @@ int main(int argc, char *argv[])
 	fclose(f);
 
 	mt_sbuf_dump_screen(sbuf);
+
+	free(sbuf->sbuf);
+	free(sbuf);
 
 	return 0;
 }

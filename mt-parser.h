@@ -10,7 +10,7 @@
 struct mt_sbuf;
 
 enum mt_state {
-	VT_DEF,
+	VT_DEF = 0,
 	VT_ESC,
 	VT_CSI,
 	VT_CSI_PRIV,
@@ -19,6 +19,8 @@ enum mt_state {
 	VT52_ESC_Y,
 };
 
+#define MT_MAX_CSI_PARS 10
+
 struct mt_parser {
 	struct mt_sbuf *sbuf;
 	enum mt_state state;
@@ -26,12 +28,17 @@ struct mt_parser {
 
 	uint8_t fg_col:3;
 	uint8_t bg_col:3;
+	uint8_t par_t:1;
+
+	uint16_t pars[MT_MAX_CSI_PARS];
+	uint8_t par_cnt;
 };
 
 static inline void mt_parser_init(struct mt_parser *parser, struct mt_sbuf *sbuf,
                                   uint8_t fg_col, uint8_t bg_col)
 {
-	memset(parser, 0, sizeof(parser));
+	memset(parser, 0, sizeof(struct mt_parser));
+
 	parser->sbuf = sbuf;
 	parser->bg_col = bg_col;
 	parser->fg_col = fg_col;

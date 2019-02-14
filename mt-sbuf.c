@@ -26,6 +26,8 @@ int mt_sbuf_resize(struct mt_sbuf *self, unsigned int n_cols, unsigned int n_row
 	if (!new_buf)
 		return 1;
 
+	memset(new_buf, 0, sbuf_sz);
+
 	if (self->sbuf) {
 		//TODO: Copy content?
 		free(self->sbuf);

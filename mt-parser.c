@@ -9,9 +9,9 @@
  * C - right
  * D - left
  */
-static void csi_cursor(struct mt_parser *self, int *pars, int par_cnt, char csi)
+static void csi_cursor(struct mt_parser *self, char csi)
 {
-	int inc = par_cnt ? pars[0] : 1;
+	int inc = self->par_cnt ? self->pars[0] : 1;
 
 	switch (csi) {
 	case 'A':
@@ -36,11 +36,11 @@ static void csi_cursor(struct mt_parser *self, int *pars, int par_cnt, char csi)
  * 1 -- left
  * 2 -- whole line
  */
-static void csi_K(struct mt_parser *self, int *pars, int par_cnt)
+static void csi_K(struct mt_parser *self)
 {
-	int par = pars[0];
+	int par = self->pars[0];
 
-	if (par_cnt < 1)
+	if (self->par_cnt < 1)
 		par = 0;
 
 	switch (par) {
@@ -59,10 +59,10 @@ static void csi_K(struct mt_parser *self, int *pars, int par_cnt)
 /*
  * Set cursor position.
  */
-void csi_H(struct mt_parser *self, int *pars, int par_cnt)
+void csi_H(struct mt_parser *self)
 {
-	if (par_cnt == 2) {
-		mt_sbuf_cursor_set(self->sbuf, pars[1] - 1, pars[0] - 1);
+	if (self->par_cnt == 2) {
+		mt_sbuf_cursor_set(self->sbuf, self->pars[1] - 1, self->pars[0] - 1);
 		return;
 	}
 
@@ -77,11 +77,11 @@ void csi_H(struct mt_parser *self, int *pars, int par_cnt)
  * 2 -- clear whole display
  * 3 -- clears whole display + scrollback
  */
-static void csi_J(struct mt_parser *self, int *pars, int par_cnt)
+static void csi_J(struct mt_parser *self)
 {
-	int par = pars[0];
+	int par = self->pars[0];
 
-	if (par_cnt < 1)
+	if (self->par_cnt < 1)
 		par = 0;
 
 	switch (par) {
@@ -94,6 +94,8 @@ static void csi_J(struct mt_parser *self, int *pars, int par_cnt)
 	case 2:
 		mt_sbuf_erase(self->sbuf, MT_SBUF_ERASE_SCREEN);
 	break;
+	default:
+		fprintf(stderr, "Unhandled CSI J %i\n", par);
 	}
 }
 
@@ -120,15 +122,15 @@ static void csi_J(struct mt_parser *self, int *pars, int par_cnt)
  * 49 -- set default bg color
  * ...
  */
-void csi_m(struct mt_parser *self, int *pars, int par_cnt)
+void csi_m(struct mt_parser *self)
 {
 	int i;
 
-	if (!par_cnt)
-		pars[par_cnt++] = 0;
+	if (!self->par_cnt)
+		self->pars[self->par_cnt++] = 0;
 
-	for (i = 0; i < par_cnt; i++) {
-		switch (pars[i]) {
+	for (i = 0; i < self->par_cnt; i++) {
+		switch (self->pars[i]) {
 		case 0:
 			mt_sbuf_bold(self->sbuf, 0);
 			mt_sbuf_reverse(self->sbuf, 0);
@@ -141,30 +143,38 @@ void csi_m(struct mt_parser *self, int *pars, int par_cnt)
 		case 7:
 			mt_sbuf_reverse(self->sbuf, 1);
 		break;
+		case 10:
+			mt_sbuf_bold(self->sbuf, 0);
+		break;
 		case 30 ... 37:
-			mt_sbuf_fg_col(self->sbuf, pars[i] - 30);
+			mt_sbuf_fg_col(self->sbuf, self->pars[i] - 30);
 		break;
 		case 39:
 			mt_sbuf_fg_col(self->sbuf, self->fg_col);
 		break;
 		case 40 ... 47:
-			mt_sbuf_bg_col(self->sbuf, pars[i] - 40);
+			mt_sbuf_bg_col(self->sbuf, self->pars[i] - 40);
 		break;
 		case 49:
 			mt_sbuf_bg_col(self->sbuf, self->bg_col);
 		break;
 		default:
-			fprintf(stderr, "Unhandled CSI %i m\n", pars[i]);
+			fprintf(stderr, "Unhandled CSI %i m\n", self->pars[i]);
 		}
 	}
 }
 
-static void csi_t(struct mt_parser *self, int *pars, int par_cnt)
+static void csi_t(struct mt_parser *self)
 {
 
 }
 
-static void do_csi(struct mt_parser *self, int *pars, int par_cnt, char csi)
+static void csi_r(struct mt_parser *self)
+{
+	fprintf(stderr, "SCROLL REGION\n");
+}
+
+static void do_csi(struct mt_parser *self, char csi)
 {
 	//fprintf(stderr, "CSI %c %i\n", csi, pars[0]);
 
@@ -173,50 +183,47 @@ static void do_csi(struct mt_parser *self, int *pars, int par_cnt, char csi)
 	case 'B':
 	case 'C':
 	case 'D':
-		csi_cursor(self, pars, par_cnt, csi);
+		csi_cursor(self, csi);
 	break;
 	case 'H':
-		csi_H(self, pars, par_cnt);
+		csi_H(self);
 	break;
 	case 'J':
-		csi_J(self, pars, par_cnt);
+		csi_J(self);
 	break;
 	case 'K':
-		csi_K(self, pars, par_cnt);
+		csi_K(self);
 	break;
 	case 'm':
-		csi_m(self, pars, par_cnt);
+		csi_m(self);
+	break;
+	case 'r':
+		csi_r(self);
 	break;
 	default:
 		fprintf(stderr, "Unhandled CSI %c %02x\n", isprint(csi) ? csi : ' ', csi);
 	}
 }
 
-#define MAX_CSI_PARS 10
-
 static int csi(struct mt_parser *self, char c)
 {
-	static int pars[MAX_CSI_PARS];
-	static int par;
-	static int t;
-
 	switch (c) {
 	case '0' ... '9':
-		pars[par] *= 10;
-		pars[par] += c - '0';
-		t = 1;
+		self->pars[self->par_cnt] *= 10;
+		self->pars[self->par_cnt] += c - '0';
+		self->par_t = 1;
 	break;
 	case ';':
-		par = (par + 1) % MAX_CSI_PARS;
-		pars[par] = 0;
-		t = 0;
+		self->par_cnt = (self->par_cnt + 1) % MT_MAX_CSI_PARS;
+		self->pars[self->par_cnt] = 0;
+		self->par_t = 0;
 	break;
 	default:
-		par += t;
-		do_csi(self, pars, par, c);
-		par = 0;
-		pars[0] = 0;
-		t = 0;
+		self->par_cnt += !!self->par_t;
+		do_csi(self, c);
+		memset(self->pars, 0, sizeof(self->pars));
+		self->par_cnt = 0;
+		self->par_t = 0;
 		return 1;
 	break;
 	}
@@ -226,7 +233,7 @@ static int csi(struct mt_parser *self, char c)
 
 static void next_char(struct mt_parser *self, char c)
 {
-	//printf("0x%02x %c\n", c, isprint(c) ? c : ' ');
+	//fprintf(stderr, "0x%02x %c\n", c, isprint(c) ? c : ' ');
 	switch (self->state) {
 	case VT_DEF:
 		switch (c) {
@@ -314,6 +321,8 @@ static void next_char(struct mt_parser *self, char c)
 		//if (vt52_esc_y(c))
 			self->state = VT_DEF;
 	break;
+	default:
+		fprintf(stderr, "INVALID STATE %i\n", self->state);
 	}
 }
 
