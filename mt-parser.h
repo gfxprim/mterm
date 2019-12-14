@@ -33,6 +33,8 @@ struct mt_parser {
 	uint8_t bg_col:3;
 	uint8_t par_t:1;
 
+	uint16_t csi_priv;
+
 	uint16_t pars[MT_MAX_CSI_PARS];
 	uint8_t par_cnt;
 };

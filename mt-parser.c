@@ -260,6 +260,27 @@ static void tab(struct mt_parser *self)
 	mt_sbuf_cursor_move(self->sbuf, 8 - (c_col % 8), 0);
 }
 
+static void do_csi_priv(struct mt_parser *self, char c)
+{
+	fprintf(stderr, "CSI priv %u %c\n", self->csi_priv, c);
+}
+
+static int csi_priv(struct mt_parser *self, char c)
+{
+	switch (c) {
+	case '0' ... '9':
+		self->csi_priv *= 10;
+		self->csi_priv += c - '0';
+	break;
+	default:
+		do_csi_priv(self, c);
+		self->csi_priv = 0;
+		return 1;
+	}
+
+	return 0;
+}
+
 static void next_char(struct mt_parser *self, char c)
 {
 	//fprintf(stderr, "0x%02x %c\n", c, isprint(c) ? c : ' ');
@@ -327,7 +348,7 @@ static void next_char(struct mt_parser *self, char c)
 		}
 	break;
 	case VT_CSI_PRIV:
-		//if (vt_csi_priv(c))
+		if (csi_priv(self, c))
 			self->state = VT_DEF;
 	break;
 	case VT_SCS_G0:
