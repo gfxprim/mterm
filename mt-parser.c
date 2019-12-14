@@ -211,6 +211,22 @@ static void do_csi(struct mt_parser *self, char csi)
 	}
 }
 
+static void set_charset(struct mt_parser *self, uint8_t pos, char c)
+{
+	switch (c) {
+	case 'A':
+	case 'B':
+	case '0':
+	case '1':
+	case '2':
+		self->charset[pos] = c;
+	break;
+	default:
+		fprintf(stderr, "Invalid G%i charset '%c'", pos, c);
+	break;
+	}
+}
+
 static int csi(struct mt_parser *self, char c)
 {
 	switch (c) {
@@ -268,14 +284,10 @@ static void next_char(struct mt_parser *self, char c)
 			//fprintf(stderr, "Bell!\n");
 		break;
 		case '\016': /* SO */
-			//if (verbose)
-			//	fprintf(stderr, "Charset G1\n");
-			self->charset = 1;
+			self->sel_charset = 1;
 		break;
 		case '\017': /* SI */
-			//if (verbose)
-			//	fprintf(stderr, "Charset G0\n");
-			self->charset = 0;
+			self->sel_charset = 0;
 		break;
 		case 0x08: /* backspace */
 			mt_sbuf_backspace(self->sbuf);
@@ -319,15 +331,11 @@ static void next_char(struct mt_parser *self, char c)
 			self->state = VT_DEF;
 	break;
 	case VT_SCS_G0:
-		//charset_G0 = c;
-		//if (verbose)
-		//	fprintf(stderr, "CSC G0=%c\n", c);
+		set_charset(self, 0, c);
 		self->state = VT_DEF;
 	break;
 	case VT_SCS_G1:
-		//charset_G1 = c;
-		//if (verbose)
-		//	fprintf(stderr, "CSC G1=%c\n", c);
+		set_charset(self, 1, c);
 		self->state = VT_DEF;
 	break;
 	case VT52_ESC_Y:

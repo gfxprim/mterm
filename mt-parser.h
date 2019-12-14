@@ -24,7 +24,10 @@ enum mt_state {
 struct mt_parser {
 	struct mt_sbuf *sbuf;
 	enum mt_state state;
-	int charset;
+
+	/* G0 and G1 charsets */
+	char charset[2];
+	uint8_t sel_charset;
 
 	uint8_t fg_col:3;
 	uint8_t bg_col:3;
@@ -42,6 +45,10 @@ static inline void mt_parser_init(struct mt_parser *parser, struct mt_sbuf *sbuf
 	parser->sbuf = sbuf;
 	parser->bg_col = bg_col;
 	parser->fg_col = fg_col;
+
+	parser->charset[0] = 'B';
+	parser->charset[1] = '0';
+	parser->sel_charset = 0;
 
 	mt_sbuf_bg_col(sbuf, bg_col);
 	mt_sbuf_fg_col(sbuf, fg_col);
