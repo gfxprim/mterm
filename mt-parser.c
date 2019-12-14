@@ -262,7 +262,20 @@ static void tab(struct mt_parser *self)
 
 static void do_csi_priv(struct mt_parser *self, char c)
 {
-	fprintf(stderr, "CSI priv %u %c\n", self->csi_priv, c);
+	if (c != 'l' && c != 'h')
+		fprintf(stderr, "Invalid CSI priv %c\n", c);
+
+	uint8_t val = c == 'l' ? 0 : 1;
+
+	switch (self->csi_priv) {
+	case 25:
+		mt_sbuf_cursor_visible(self->sbuf, val);
+	break;
+	default:
+		fprintf(stderr, "Unhandled CSI priv %u %c\n",
+			self->csi_priv, c);
+	}
+
 }
 
 static int csi_priv(struct mt_parser *self, char c)

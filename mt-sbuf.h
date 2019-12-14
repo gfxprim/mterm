@@ -48,6 +48,8 @@ struct mt_sbuf {
 	mt_coord cur_col;
 	mt_coord cur_row;
 
+	uint8_t cursor_visible:1;
+
 	struct mt_char cur_char;
 
 	struct mt_screen *screen;
@@ -109,6 +111,8 @@ void mt_sbuf_cursor_move(struct mt_sbuf *self, mt_coord col_inc, mt_coord row_in
 void mt_sbuf_newline(struct mt_sbuf *self);
 
 void mt_sbuf_cursor_set(struct mt_sbuf *self, mt_coord col, mt_coord row);
+
+void mt_sbuf_cursor_visible(struct mt_sbuf *self, uint8_t visible);
 
 enum mt_sbuf_erase_t {
 	MT_SBUF_ERASE_CUR_LEFT,

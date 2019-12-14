@@ -162,6 +162,16 @@ void mt_sbuf_cursor_set(struct mt_sbuf *self, mt_coord col, mt_coord row)
 	set_cursor(self);
 }
 
+void mt_sbuf_cursor_visible(struct mt_sbuf *self, uint8_t visible)
+{
+	self->cursor_visible = visible;
+
+	if (visible)
+		set_cursor(self);
+	else
+		unset_cursor(self);
+}
+
 void mt_sbuf_putc(struct mt_sbuf *self, const char c)
 {
 	struct mt_char *mc;
