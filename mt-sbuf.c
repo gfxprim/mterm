@@ -5,14 +5,13 @@
 
 struct mt_sbuf *mt_sbuf_alloc(void)
 {
-	size_t mt_sbuf_sz = sizeof(struct mt_sbuf);
 	struct mt_sbuf *self;
 
-	self = malloc(mt_sbuf_sz);
+	self = malloc(sizeof(struct mt_sbuf));
 	if (!self)
 		return NULL;
 
-	memset(self, 0, mt_sbuf_sz);
+	memset(self, 0, sizeof(*self));
 
 	return self;
 }
@@ -29,9 +28,16 @@ int mt_sbuf_resize(struct mt_sbuf *self, unsigned int n_cols, unsigned int n_row
 	memset(new_buf, 0, sbuf_sz);
 
 	if (self->sbuf) {
-		//TODO: Copy content?
+		mt_coord row;
+		size_t min_cols = MT_MIN(self->cols, (int)n_cols);
+
+		for (row = 0; row < self->rows; row++) {
+			struct mt_char *o_row = &self->sbuf[row * self->cols];
+			struct mt_char *n_row = &new_buf[row * n_cols];
+			memcpy(n_row, o_row, min_cols * sizeof(struct mt_char));
+		}
+
 		free(self->sbuf);
-		self->sbuf_off = 0;
 	}
 
 	self->sbuf = new_buf;
@@ -48,7 +54,7 @@ int mt_sbuf_resize(struct mt_sbuf *self, unsigned int n_cols, unsigned int n_row
 	return 0;
 }
 
-void mt_sbuf_scroll(struct mt_sbuf *self, mt_coord inc)
+static void mt_sbuf_scroll(struct mt_sbuf *self, mt_coord inc)
 {
 	struct mt_char *row;
 
@@ -62,18 +68,34 @@ void mt_sbuf_scroll(struct mt_sbuf *self, mt_coord inc)
 		self->screen->scroll(self->screen->priv, 1);
 }
 
-static void screen_cursor(struct mt_sbuf *self,
-                          mt_coord o_col, mt_coord o_row,
-                          mt_coord col, mt_coord row)
+static void unset_cursor(struct mt_sbuf *self)
 {
-	if ((o_col != col || o_row != row) && self->screen)
-		self->screen->cursor(o_col, o_row, col, row);
+	struct mt_char *cur = mt_sbuf_char(self, self->cur_col, self->cur_row);
+
+	cur->reverse = 0;
+
+	if (self->screen)
+		self->screen->cursor(self->cur_col, self->cur_row);
+}
+
+static void set_cursor(struct mt_sbuf *self)
+{
+	struct mt_char *cur = mt_sbuf_char(self, self->cur_col, self->cur_row);
+
+	cur->reverse = 1;
+
+	if (cur->c == 0) {
+		cur->fg_col = self->cur_char.fg_col;
+		cur->bg_col = self->cur_char.bg_col;
+	}
+
+	if (self->screen)
+		self->screen->cursor(self->cur_col, self->cur_row);
 }
 
 void mt_sbuf_cursor_move(struct mt_sbuf *self, mt_coord col_inc, mt_coord row_inc)
 {
-	mt_coord o_col = self->cur_col;
-	mt_coord o_row = self->cur_row;
+	unset_cursor(self);
 
 	self->cur_col += col_inc;
 	self->cur_row += row_inc;
@@ -90,13 +112,12 @@ void mt_sbuf_cursor_move(struct mt_sbuf *self, mt_coord col_inc, mt_coord row_in
 	if (self->cur_row >= self->rows)
 		self->cur_row = self->rows - 1;
 
-	screen_cursor(self, o_col, o_row, self->cur_col, self->cur_row);
+	set_cursor(self);
 }
 
 void mt_sbuf_newline(struct mt_sbuf *self)
 {
-	mt_coord o_col = self->cur_col;
-	mt_coord o_row = self->cur_row;
+	unset_cursor(self);
 
 	self->cur_col = 0;
 	self->cur_row++;
@@ -106,13 +127,12 @@ void mt_sbuf_newline(struct mt_sbuf *self)
 		self->cur_row--;
 	}
 
-	screen_cursor(self, o_col, o_row, self->cur_col, self->cur_row);
+	set_cursor(self);
 }
 
 void mt_sbuf_cursor_inc(struct mt_sbuf *self)
 {
-	mt_coord o_col = self->cur_col;
-	mt_coord o_row = self->cur_row;
+	unset_cursor(self);
 
 	self->cur_col++;
 
@@ -126,13 +146,12 @@ void mt_sbuf_cursor_inc(struct mt_sbuf *self)
 		self->cur_row--;
 	}
 
-	screen_cursor(self, o_col, o_row, self->cur_col, self->cur_row);
+	set_cursor(self);
 }
 
 void mt_sbuf_cursor_set(struct mt_sbuf *self, mt_coord col, mt_coord row)
 {
-	mt_coord o_col = self->cur_col;
-	mt_coord o_row = self->cur_row;
+	unset_cursor(self);
 
 	if (col >= 0 && col < self->cols)
 		self->cur_col = col;
@@ -140,7 +159,7 @@ void mt_sbuf_cursor_set(struct mt_sbuf *self, mt_coord col, mt_coord row)
 	if (row >= 0 && row < self->rows)
 		self->cur_row = row;
 
-	screen_cursor(self, o_col, o_row, self->cur_col, self->cur_row);
+	set_cursor(self);
 }
 
 void mt_sbuf_putc(struct mt_sbuf *self, const char c)
@@ -152,6 +171,13 @@ void mt_sbuf_putc(struct mt_sbuf *self, const char c)
 	self->cur_char.c = c;
 
 	*mc = self->cur_char;
+
+	if (mc->reverse) {
+		uint8_t bg = mc->bg_col;
+		mc->bg_col = mc->fg_col;
+		mc->fg_col = bg;
+		mc->reverse = 0;
+	}
 
 	if (self->screen)
 		self->screen->damage(self->screen->priv, self->cur_col, self->cur_row, self->cur_col+1, self->cur_row+1);

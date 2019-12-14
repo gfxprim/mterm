@@ -57,6 +57,11 @@ struct mt_sbuf {
 	struct mt_char *sbuf;
 };
 
+static inline mt_coord mt_sbuf_cursor_col(struct mt_sbuf *self)
+{
+	return self->cur_col;
+}
+
 static inline struct mt_char *mt_sbuf_row(struct mt_sbuf *self, mt_coord row)
 {
 	return &self->sbuf[((row + self->sbuf_off) % self->rows) * self->cols];

@@ -72,8 +72,8 @@ static gp_backend *win;
 static struct mt_damage damage;
 static struct mt_sbuf *sbuf;
 
-#define FONT_DEF gp_font_haxor_narrow_17
-#define FONT_BOLD gp_font_haxor_narrow_bold_17
+#define FONT_DEF gp_font_haxor_narrow_16
+#define FONT_BOLD gp_font_haxor_narrow_bold_16
 
 static void draw_char(struct mt_char *c, gp_coord col, gp_coord row)
 {
@@ -85,26 +85,44 @@ static void draw_char(struct mt_char *c, gp_coord col, gp_coord row)
 	else
 		style.font = FONT_DEF;
 
-	gp_fill_rect_xyxy(win->pixmap, sx, sy, sx + cell_w, sy + cell_h, bg_col(c));
-	gp_print(win->pixmap, &style, sx, sy, GP_VALIGN_BELOW | GP_ALIGN_RIGHT,
-		 fg_col(c), 0, "%c", mt_char_c(c));
+	gp_pixel bg = bg_col(c);
+	gp_pixel fg = fg_col(c);
 
-	gp_backend_update_rect_xyxy(win, sx, sy, sx + cell_w-1, sy + cell_h-1);
+	if (c->reverse)
+		MT_SWAP(bg, fg);
+
+	gp_fill_rect_xyxy(win->pixmap, sx, sy, sx + cell_w-1, sy + cell_h-1, bg);
+	gp_print(win->pixmap, &style, sx, sy, GP_VALIGN_BELOW | GP_ALIGN_RIGHT,
+		 fg, 0, "%c", mt_char_c(c));
 }
 
-static void do_damage(void)
+static void update_region(mt_coord s_col, mt_coord e_col,
+                          mt_coord s_row, mt_coord e_row)
+{
+	gp_coord sx = s_col * cell_w;
+	gp_coord sy = s_row * cell_h;
+	gp_coord ex = e_col * cell_w - 1;
+	gp_coord ey = e_row * cell_h - 1;
+
+	gp_backend_update_rect_xyxy(win, sx, sy, ex, ey);
+}
+
+static void redraw_region(mt_coord s_row, mt_coord e_row,
+                          mt_coord s_col, mt_coord e_col)
 {
 	mt_coord col, row;
-	mt_coord s_col = damage.s_col;
-	mt_coord e_col = damage.e_col;
-	mt_coord s_row = damage.s_row;
-	mt_coord e_row = damage.e_row;
 
 	for (row = s_row; row < e_row; row++) {
 		struct mt_char *c = mt_sbuf_row(parser.sbuf, row);
 		for (col = s_col; col < e_col; col++)
 			draw_char(&c[col], col, row);
 	}
+}
+
+static void do_damage(void)
+{
+	redraw_region(damage.s_row, damage.e_row, damage.s_col, damage.e_col);
+	update_region(damage.s_col, damage.e_col, damage.s_row, damage.e_row);
 }
 
 static void do_scroll(int lines)
@@ -123,9 +141,16 @@ static void do_scroll(int lines)
 	gp_backend_flip(win);
 }
 
-static void cursor(mt_coord o_col, mt_coord o_row, mt_coord n_col, mt_coord n_row)
+static void cursor(mt_coord col, mt_coord row)
 {
+	struct mt_char *c;
 
+	if (col > 0 && row > 0) {
+		c = mt_sbuf_char(parser.sbuf, col, row);
+		//GP_DEBUG(0, "CURSOR %p %iX%i '%c' %i", c, col, row, c->c, c->reverse);
+		draw_char(c, col, row);
+		update_region(col, col+1, row, row+1);
+	}
 }
 
 static void erase(mt_coord s_col, mt_coord s_row, mt_coord e_col, mt_coord e_row)
@@ -327,11 +352,12 @@ static void resize(int fd, gp_event *ev)
 		fprintf(stderr, "ioctl(fd, TIOCSWINSZ, ...) failed\n");
 
 	gp_backend_resize_ack(win);
-	//gp_fill(win->pixmap, bg_col());
-	//TODO: Redraw buffer?
-	//gp_backend_flip(win);
 
 	mt_sbuf_resize(parser.sbuf, cols, rows);
+
+	gp_fill(win->pixmap, bg_col(mt_sbuf_cur_char(parser.sbuf)));
+	redraw_region(0, rows, 0, cols);
+	gp_backend_flip(win);
 }
 #endif
 
