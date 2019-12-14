@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include "mt-sbuf.h"
 #include "mt-parser.h"
 
@@ -92,6 +93,7 @@ static void csi_J(struct mt_parser *self)
 		mt_sbuf_erase(self->sbuf, MT_SBUF_ERASE_START);
 	break;
 	case 2:
+	case 3: //TODO: Scrollback
 		mt_sbuf_erase(self->sbuf, MT_SBUF_ERASE_SCREEN);
 	break;
 	default:
@@ -113,6 +115,8 @@ static void csi_J(struct mt_parser *self)
  * 8 -- conceal (mostly unsupported)
  * 9 -- cossed-out
  * 10 -- default font
+ * ...
+ * 27 -- turn off reverse
  * ...
  * 30 - 37 -- set fg color
  * 38 -- set RGB fg color
@@ -146,6 +150,9 @@ void csi_m(struct mt_parser *self)
 		case 10:
 			mt_sbuf_bold(self->sbuf, 0);
 		break;
+		case 27:
+			mt_sbuf_reverse(self->sbuf, 0);
+		break;
 		case 30 ... 37:
 			mt_sbuf_fg_col(self->sbuf, self->pars[i] - 30);
 		break;
@@ -166,7 +173,6 @@ void csi_m(struct mt_parser *self)
 
 static void csi_t(struct mt_parser *self)
 {
-
 }
 
 static void csi_r(struct mt_parser *self)
@@ -231,6 +237,13 @@ static int csi(struct mt_parser *self, char c)
 	return 0;
 }
 
+static void tab(struct mt_parser *self)
+{
+	mt_coord c_col = mt_sbuf_cursor_col(self->sbuf);
+
+	mt_sbuf_cursor_move(self->sbuf, 8 - (c_col % 8), 0);
+}
+
 static void next_char(struct mt_parser *self, char c)
 {
 	//fprintf(stderr, "0x%02x %c\n", c, isprint(c) ? c : ' ');
@@ -249,7 +262,7 @@ static void next_char(struct mt_parser *self, char c)
 			mt_sbuf_cursor_set(self->sbuf, 0, -1);
 		break;
 		case '\t':
-			//vt_tab();
+			tab(self);
 		break;
 		case '\a':
 			//fprintf(stderr, "Bell!\n");
