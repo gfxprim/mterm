@@ -238,15 +238,6 @@ void mt_sbuf_erase(struct mt_sbuf *self, enum mt_sbuf_erase_t type)
 	}
 }
 
-void mt_sbuf_backspace(struct mt_sbuf *self)
-{
-	if (self->cur_col <= 0)
-		return;
-
-	erase(self, self->cur_col-1, self->cur_row, self->cur_col, self->cur_row+1);
-	mt_sbuf_cursor_move(self, -1, 0);
-}
-
 void mt_sbuf_dump_screen(struct mt_sbuf *self)
 {
 	int col, row;

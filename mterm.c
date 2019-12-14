@@ -147,7 +147,6 @@ static void cursor(mt_coord col, mt_coord row)
 
 	if (col > 0 && row > 0) {
 		c = mt_sbuf_char(parser.sbuf, col, row);
-		//GP_DEBUG(0, "CURSOR %p %iX%i '%c' %i", c, col, row, c->c, c->reverse);
 		draw_char(c, col, row);
 		update_region(col, col+1, row, row+1);
 	}

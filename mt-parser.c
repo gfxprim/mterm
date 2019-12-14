@@ -324,7 +324,7 @@ static void next_char(struct mt_parser *self, char c)
 			self->sel_charset = 0;
 		break;
 		case 0x08: /* backspace */
-			mt_sbuf_backspace(self->sbuf);
+			mt_sbuf_cursor_move(self->sbuf, -1, 0);
 		break;
 		default:
 			mt_sbuf_putc(self->sbuf, c);

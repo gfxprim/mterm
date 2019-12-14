@@ -127,8 +127,6 @@ void mt_sbuf_erase(struct mt_sbuf *self, enum mt_sbuf_erase_t type);
 
 void mt_sbuf_putc(struct mt_sbuf *self, const char c);
 
-void mt_sbuf_backspace(struct mt_sbuf *self);
-
 void mt_sbuf_dump_screen(struct mt_sbuf *self);
 
 #endif /* MT_SBUF__ */
