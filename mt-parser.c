@@ -174,6 +174,16 @@ void csi_m(struct mt_parser *self)
 	}
 }
 
+static void csi_insert_spaces(struct mt_parser *self)
+{
+	unsigned int i;
+
+	if (!self->par_cnt)
+		self->pars[0] = 1;
+
+	mt_sbuf_insert_blank(self->sbuf, self->pars[0]);
+}
+
 static void csi_t(struct mt_parser *self)
 {
 }
@@ -188,6 +198,9 @@ static void do_csi(struct mt_parser *self, char csi)
 	//fprintf(stderr, "CSI %c %i\n", csi, pars[0]);
 
 	switch (csi) {
+	case '@':
+		csi_insert_spaces(self);
+	break;
 	case 'A':
 	case 'B':
 	case 'C':
@@ -339,7 +352,7 @@ static void next_char(struct mt_parser *self, char c)
 			tab(self);
 		break;
 		case '\a':
-			//fprintf(stderr, "Bell!\n");
+			fprintf(stderr, "Bell!\n");
 		break;
 		case '\016': /* SO */
 			mt_sbuf_shift_out(self->sbuf);

@@ -131,6 +131,23 @@ int mt_sbuf_cursor_move(struct mt_sbuf *self, mt_coord col_inc, mt_coord row_inc
 	return ret;
 }
 
+void mt_sbuf_insert_blank(struct mt_sbuf *self, uint16_t blanks)
+{
+	mt_coord col = self->cur_col;
+	mt_coord row = self->cur_row;
+	uint16_t i;
+
+	unset_cursor(self);
+
+	for (i = 0; i < blanks; i++)
+		mt_sbuf_putc(self, ' ');
+
+	self->cur_col = col;
+	self->cur_row = row;
+
+	set_cursor(self);
+}
+
 void mt_sbuf_newline(struct mt_sbuf *self)
 {
 	unset_cursor(self);
