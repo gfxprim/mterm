@@ -294,6 +294,21 @@ static int csi_priv(struct mt_parser *self, char c)
 	return 0;
 }
 
+/*
+ * Operating System Command
+ *
+ * OSC 0; [title] \a     - set window tittle
+ * OSC 52;c; [base64] \a - set clipboard
+ */
+static int osc(struct mt_parser *self, char c)
+{
+	if (c == '\a')
+		return 1;
+
+	//fprintf(stderr, "OSC '%c'\n", c);
+	return 0;
+}
+
 static void next_char(struct mt_parser *self, char c)
 {
 	//fprintf(stderr, "0x%02x %c\n", c, isprint(c) ? c : ' ');
@@ -336,6 +351,9 @@ static void next_char(struct mt_parser *self, char c)
 		case '[':
 			self->state = VT_CSI;
 		break;
+		case ']':
+			self->state = VT_OSC;
+		break;
 		case '(':
 			self->state = VT_SCS_G0;
 		break;
@@ -359,6 +377,10 @@ static void next_char(struct mt_parser *self, char c)
 			if (csi(self, c))
 				self->state = VT_DEF;
 		}
+	break;
+	case VT_OSC:
+		if (osc(self, c))
+			self->state = VT_DEF;
 	break;
 	case VT_CSI_PRIV:
 		if (csi_priv(self, c))

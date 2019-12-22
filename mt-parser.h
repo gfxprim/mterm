@@ -12,6 +12,7 @@ struct mt_sbuf;
 enum mt_state {
 	VT_DEF = 0,
 	VT_ESC,
+	VT_OSC,
 	VT_CSI,
 	VT_CSI_PRIV,
 	VT_SCS_G0,
