@@ -115,9 +115,12 @@ static void csi_J(struct mt_parser *self)
  * 8 -- conceal (mostly unsupported)
  * 9 -- cossed-out
  * 10 -- default font
+ * 23 -- turn off italic
+ * 24 -- turn off underline
  * ...
  * 27 -- turn off reverse
  * ...
+ * 29 -- turn off crossed-out
  * 30 - 37 -- set fg color
  * 38 -- set RGB fg color
  * 39 -- set default fg color
@@ -271,6 +274,12 @@ static void do_csi_priv(struct mt_parser *self, char c)
 	case 25:
 		mt_sbuf_cursor_visible(self->sbuf, val);
 	break;
+	case 12:
+		fprintf(stderr, "TODO: Cursor blink %c\n", c);
+	break;
+	case 2004:
+		fprintf(stderr, "TODO: Bracketed paste mode %c\n", c);
+	break;
 	default:
 		fprintf(stderr, "Unhandled CSI priv %u %c\n",
 			self->csi_priv, c);
@@ -371,11 +380,17 @@ static void next_char(struct mt_parser *self, char c)
 		}
 	break;
 	case VT_CSI:
-		if (c == '?') {
+		switch (c) {
+		case '?':
 			self->state = VT_CSI_PRIV;
-		} else {
+		break;
+		case '>':
+			self->state = VT_CSI_DA2;
+		break;
+		default:
 			if (csi(self, c))
 				self->state = VT_DEF;
+		break;
 		}
 	break;
 	case VT_OSC:
@@ -385,6 +400,11 @@ static void next_char(struct mt_parser *self, char c)
 	case VT_CSI_PRIV:
 		if (csi_priv(self, c))
 			self->state = VT_DEF;
+	break;
+	case VT_CSI_DA2:
+		if (c == 'c')
+			self->state = VT_DEF;
+		//TODO: response CSI61;1;1c
 	break;
 	case VT_SCS_G0:
 		set_charset(self, 0, c);

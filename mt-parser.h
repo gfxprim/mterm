@@ -15,6 +15,7 @@ enum mt_state {
 	VT_OSC,
 	VT_CSI,
 	VT_CSI_PRIV,
+	VT_CSI_DA2,
 	VT_SCS_G0,
 	VT_SCS_G1,
 	VT52_ESC_Y,
