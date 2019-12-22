@@ -1,0 +1,26 @@
+80 24
+\e[?1h\e=\e[?25l\e[H\e[2J\e(B\e[mtop - 10:39:17 up  1:27,  9 users,  load average: 0.45, 0.22, 0.08\e(B\e[m\e[39;49m\e(B\e[m\e[39;49m\e[K\n
+Tasks:\e(B\e[m\e[39;49m\e[1m 119 \e(B\e[m\e[39;49mtotal,\e(B\e[m\e[39;49m\e[1m   1 \e(B\e[m\e[39;49mrunning,\e(B\e[m\e[39;49m\e[1m 118 \e(B\e[m\e[39;49msleeping,\e(B\e[m\e[39;49m\e[1m   0 \e(B\e[m\e[39;49mstopped,\e(B\e[m\e[39;49m\e[1m   0 \e(B\e[m\e[39;49mzombie\e(B\e[m\e[39;49m\e(B\e[m\e[39;49m\e[K\n
+%Cpu(s):\e(B\e[m\e[39;49m\e[1m  0.0 \e(B\e[m\e[39;49mus,\e(B\e[m\e[39;49m\e[1m  1.6 \e(B\e[m\e[39;49msy,\e(B\e[m\e[39;49m\e[1m  0.0 \e(B\e[m\e[39;49mni,\e(B\e[m\e[39;49m\e[1m 98.4 \e(B\e[m\e[39;49mid,\e(B\e[m\e[39;49m\e[1m  0.0 \e(B\e[m\e[39;49mwa,\e(B\e[m\e[39;49m\e[1m  0.0 \e(B\e[m\e[39;49mhi,\e(B\e[m\e[39;49m\e[1m  0.0 \e(B\e[m\e[39;49msi,\e(B\e[m\e[39;49m\e[1m  0.0 \e(B\e[m\e[39;49mst\e(B\e[m\e[39;49m\e(B\e[m\e[39;49m\e[K\n
+MiB Mem :\e(B\e[m\e[39;49m\e[1m   3733.9 \e(B\e[m\e[39;49mtotal,\e(B\e[m\e[39;49m\e[1m   2284.1 \e(B\e[m\e[39;49mfree,\e(B\e[m\e[39;49m\e[1m    917.0 \e(B\e[m\e[39;49mused,\e(B\e[m\e[39;49m\e[1m    532.7 \e(B\e[m\e[39;49mbuff/cache\e(B\e[m\e[39;49m\e(B\e[m\e[39;49m\e[K\n
+MiB Swap:\e(B\e[m\e[39;49m\e[1m   4096.0 \e(B\e[m\e[39;49mtotal,\e(B\e[m\e[39;49m\e[1m   4096.0 \e(B\e[m\e[39;49mfree,\e(B\e[m\e[39;49m\e[1m      0.0 \e(B\e[m\e[39;49mused.\e(B\e[m\e[39;49m\e[1m   2660.6 \e(B\e[m\e[39;49mavail Mem \e(B\e[m\e[39;49m\e(B\e[m\e[39;49m\e[K\n
+\e[K\n
+\e[7m  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND    \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m 9680 metan     20   0   21428   5768   4908 S   6.7   0.2   0:00.03 xterm      \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m    1 root      20   0    2352   1676   1572 S   0.0   0.0   0:00.44 init       \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m    2 root      20   0       0      0      0 S   0.0   0.0   0:00.00 kthreadd   \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m    3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp     \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m    4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par_gp \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m    6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/0+ \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m    8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_percpu+ \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m    9 root      20   0       0      0      0 S   0.0   0.0   0:00.03 ksoftirqd+ \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m   10 root      20   0       0      0      0 I   0.0   0.0   0:00.51 rcu_preem+ \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m   11 root      rt   0       0      0      0 S   0.0   0.0   0:00.00 migration+ \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m   12 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/0    \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m   13 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/1    \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m   14 root      rt   0       0      0      0 S   0.0   0.0   0:00.00 migration+ \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m   15 root      20   0       0      0      0 S   0.0   0.0   0:00.03 ksoftirqd+ \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m   17 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/1+ \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m   18 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/2    \e(B\e[m\e[39;49m\e[K\n
+\e(B\e[m   19 root      rt   0       0      0      0 S   0.0   0.0   0:00.00 migration+ \e(B\e[m\e[39;49m\e[K\e[?1l\e>\e[25;1H\n
+\e[?12l\e[?25h\e[K

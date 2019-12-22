@@ -72,6 +72,8 @@ static void unset_cursor(struct mt_sbuf *self)
 {
 	struct mt_char *cur = mt_sbuf_char(self, self->cur_col, self->cur_row);
 
+	//fprintf(stderr, "Unset cursor\n");
+
 	cur->reverse = 0;
 
 	if (self->screen)
@@ -81,6 +83,8 @@ static void unset_cursor(struct mt_sbuf *self)
 static void set_cursor(struct mt_sbuf *self)
 {
 	struct mt_char *cur = mt_sbuf_char(self, self->cur_col, self->cur_row);
+
+	//fprintf(stderr, "Set cursor\n");
 
 	cur->reverse = 1;
 
@@ -93,26 +97,38 @@ static void set_cursor(struct mt_sbuf *self)
 		self->screen->cursor(self->cur_col, self->cur_row);
 }
 
-void mt_sbuf_cursor_move(struct mt_sbuf *self, mt_coord col_inc, mt_coord row_inc)
+int mt_sbuf_cursor_move(struct mt_sbuf *self, mt_coord col_inc, mt_coord row_inc)
 {
+	int ret = 0;
+
 	unset_cursor(self);
 
 	self->cur_col += col_inc;
 	self->cur_row += row_inc;
 
-	if (self->cur_col < 0)
+	if (self->cur_col < 0) {
+		ret = 1;
 		self->cur_col = 0;
+	}
 
-	if (self->cur_row < 0)
+	if (self->cur_row < 0) {
+		ret = 1;
 		self->cur_row = 0;
+	}
 
-	if (self->cur_col >= self->cols)
+	if (self->cur_col >= self->cols) {
+		ret = 1;
 		self->cur_col = self->cols - 1;
+	}
 
-	if (self->cur_row >= self->rows)
+	if (self->cur_row >= self->rows) {
+		ret = 1;
 		self->cur_row = self->rows - 1;
+	}
 
 	set_cursor(self);
+
+	return ret;
 }
 
 void mt_sbuf_newline(struct mt_sbuf *self)
@@ -137,8 +153,13 @@ void mt_sbuf_cursor_inc(struct mt_sbuf *self)
 	self->cur_col++;
 
 	if (self->cur_col >= self->cols) {
-		self->cur_col = 0;
-		self->cur_row++;
+		if (self->cursor_hidden) {
+			self->cur_col--;
+		} else {
+			self->cur_col = 0;
+			self->cur_row++;
+		}
+
 	}
 
 	if (self->cur_row >= self->rows) {
@@ -164,7 +185,7 @@ void mt_sbuf_cursor_set(struct mt_sbuf *self, mt_coord col, mt_coord row)
 
 void mt_sbuf_cursor_visible(struct mt_sbuf *self, uint8_t visible)
 {
-	self->cursor_visible = visible;
+	self->cursor_hidden = !visible;
 
 	if (visible)
 		set_cursor(self);
@@ -175,6 +196,13 @@ void mt_sbuf_cursor_visible(struct mt_sbuf *self, uint8_t visible)
 void mt_sbuf_putc(struct mt_sbuf *self, const char c)
 {
 	struct mt_char *mc;
+
+	if (!isprint(c)) {
+		fprintf(stderr, "Invalid character %c!", c);
+		return;
+	}
+
+	//fprintf(stderr, "%2i %2i %02x %c\n", self->cur_col, self->cur_row, c, c);
 
 	mc = mt_sbuf_char(self, self->cur_col, self->cur_row);
 

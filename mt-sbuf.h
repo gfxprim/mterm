@@ -48,7 +48,7 @@ struct mt_sbuf {
 	mt_coord cur_col;
 	mt_coord cur_row;
 
-	uint8_t cursor_visible:1;
+	uint8_t cursor_hidden:1;
 
 	struct mt_char cur_char;
 
@@ -106,7 +106,7 @@ struct mt_sbuf *mt_sbuf_alloc(void);
 
 int mt_sbuf_resize(struct mt_sbuf *self, unsigned int n_cols, unsigned int n_rows);
 
-void mt_sbuf_cursor_move(struct mt_sbuf *self, mt_coord col_inc, mt_coord row_inc);
+int mt_sbuf_cursor_move(struct mt_sbuf *self, mt_coord col_inc, mt_coord row_inc);
 
 void mt_sbuf_newline(struct mt_sbuf *self);
 

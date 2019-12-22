@@ -1,0 +1,27 @@
+ --------------------------------------------------------------------------------
+|Tasks: 119 total,   1 running, 118 sleeping,   0 stopped,   0 zombie            |
+|%Cpu(s):  0.0 us,  1.6 sy,  0.0 ni, 98.4 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st |
+|MiB Mem :   3733.9 total,   2284.1 free,    917.0 used,    532.7 buff/cache     |
+|MiB Swap:   4096.0 total,   4096.0 free,      0.0 used.   2660.6 avail Mem      |
+|                                                                                |
+|  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND    |
+| 9680 metan     20   0   21428   5768   4908 S   6.7   0.2   0:00.03 xterm      |
+|    1 root      20   0    2352   1676   1572 S   0.0   0.0   0:00.44 init       |
+|    2 root      20   0       0      0      0 S   0.0   0.0   0:00.00 kthreadd   |
+|    3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp     |
+|    4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par_gp |
+|    6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/0+ |
+|    8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_percpu+ |
+|    9 root      20   0       0      0      0 S   0.0   0.0   0:00.03 ksoftirqd+ |
+|   10 root      20   0       0      0      0 I   0.0   0.0   0:00.51 rcu_preem+ |
+|   11 root      rt   0       0      0      0 S   0.0   0.0   0:00.00 migration+ |
+|   12 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/0    |
+|   13 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/1    |
+|   14 root      rt   0       0      0      0 S   0.0   0.0   0:00.00 migration+ |
+|   15 root      20   0       0      0      0 S   0.0   0.0   0:00.03 ksoftirqd+ |
+|   17 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker/1+ |
+|   18 root      20   0       0      0      0 S   0.0   0.0   0:00.00 cpuhp/2    |
+|   19 root      rt   0       0      0      0 S   0.0   0.0   0:00.00 migration+ |
+|                                                                                |
+ --------------------------------------------------------------------------------
+size 24x80 cursor 23x0
