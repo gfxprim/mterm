@@ -219,7 +219,7 @@ static void set_charset(struct mt_parser *self, uint8_t pos, char c)
 	case '0':
 	case '1':
 	case '2':
-		self->charset[pos] = c;
+		mt_sbuf_set_charset(self->sbuf, pos, c);
 	break;
 	default:
 		fprintf(stderr, "Invalid G%i charset '%c'", pos, c);
@@ -318,10 +318,10 @@ static void next_char(struct mt_parser *self, char c)
 			//fprintf(stderr, "Bell!\n");
 		break;
 		case '\016': /* SO */
-			self->sel_charset = 1;
+			mt_sbuf_shift_out(self->sbuf);
 		break;
 		case '\017': /* SI */
-			self->sel_charset = 0;
+			mt_sbuf_shift_in(self->sbuf);
 		break;
 		case 0x08: /* backspace */
 			mt_sbuf_cursor_move(self->sbuf, -1, 0);

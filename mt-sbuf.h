@@ -48,6 +48,10 @@ struct mt_sbuf {
 	mt_coord cur_col;
 	mt_coord cur_row;
 
+	/* G0 and G1 charsets */
+	char charset[2];
+	uint8_t sel_charset;
+
 	uint8_t cursor_hidden:1;
 
 	struct mt_char cur_char;
@@ -58,6 +62,38 @@ struct mt_sbuf {
 	size_t sbuf_off;
 	struct mt_char *sbuf;
 };
+
+/*
+ * Sets charset at G0 or G1 slot to 'A' 'B' or '0'.
+ */
+static inline void mt_sbuf_set_charset(struct mt_sbuf *self, unsigned int Gx, char charset)
+{
+	self->charset[Gx] = charset;
+}
+
+/*
+ * Set currect charset to G0 slot.
+ */
+static inline void mt_sbuf_shift_in(struct mt_sbuf *self)
+{
+	self->sel_charset = 1;
+}
+
+/*
+ * Set current charset to G1 slot.
+ */
+static inline void mt_sbuf_shift_out(struct mt_sbuf *self)
+{
+	self->sel_charset = 1;
+}
+
+/*
+ * Returns current charset
+ */
+static inline char mt_sbuf_charset(struct mt_sbuf *self)
+{
+	return self->sel_charset ? self->charset[1] : self->charset[0];
+}
 
 static inline mt_coord mt_sbuf_cursor_col(struct mt_sbuf *self)
 {

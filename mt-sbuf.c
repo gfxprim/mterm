@@ -193,18 +193,45 @@ void mt_sbuf_cursor_visible(struct mt_sbuf *self, uint8_t visible)
 		unset_cursor(self);
 }
 
-void mt_sbuf_putc(struct mt_sbuf *self, const char c)
+void mt_sbuf_putc(struct mt_sbuf *self, char c)
 {
 	struct mt_char *mc;
-
-	if (!isprint(c)) {
-		fprintf(stderr, "Invalid character %c!", c);
-		return;
-	}
 
 	//fprintf(stderr, "%2i %2i %02x %c\n", self->cur_col, self->cur_row, c, c);
 
 	mc = mt_sbuf_char(self, self->cur_col, self->cur_row);
+
+	char charset = mt_sbuf_charset(self);
+
+	/* US */
+	if (charset == 'B') {
+		if (!isprint(c)) {
+			fprintf(stderr, "Invalid character %c!", c);
+			return;
+		}
+	}
+
+	/* Line drawing */
+	if (charset == '0') {
+		switch (c) {
+		case 'j':
+		case 'k':
+		case 'l':
+		case 'm':
+		case 'n':
+		case 'u':
+		case 't':
+		case 'v':
+		case 'w':
+			c = '+';
+		break;
+		case 'x':
+			c = '|';
+		break;
+		case 'q':
+			c = '-';
+		break;}
+	}
 
 	self->cur_char.c = c;
 
