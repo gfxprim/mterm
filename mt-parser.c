@@ -202,11 +202,39 @@ static void csi_del_chars(struct mt_parser *self)
 
 static void csi_t(struct mt_parser *self)
 {
+	fprintf(stderr, "CSI t\n");
 }
 
 static void csi_r(struct mt_parser *self)
 {
 	fprintf(stderr, "SCROLL REGION\n");
+}
+
+/*
+ * CSI .. l -> RM Reset Mode
+ * CSI .. h -> SM Set Mode
+ *
+ * Modes:
+ * .
+ * 4 IRM -- Insertion Replacement Mode
+ * .
+ * .
+ * 20 LNM -- Automatic Newline
+ * .
+ */
+static void csi_lh(struct mt_parser *self, char csi)
+{
+	unsigned int i;
+
+	for (i = 0; i < self->par_cnt; i++) {
+		switch (self->pars[i]) {
+		case 4:
+			fprintf(stderr, "IRM %c\n", csi);
+		break;
+		default:
+			fprintf(stderr, "Unhandled RM %i\n", self->pars[i]);
+		}
+	}
 }
 
 static void do_csi(struct mt_parser *self, char csi)
@@ -241,6 +269,10 @@ static void do_csi(struct mt_parser *self, char csi)
 	case 'r':
 		csi_r(self);
 	break;
+	case 'l':
+	case 'h':
+		csi_lh(self, csi);
+	break;
 	default:
 		fprintf(stderr, "Unhandled CSI %c %02x\n", isprint(csi) ? csi : ' ', csi);
 	}
@@ -262,7 +294,34 @@ static void set_charset(struct mt_parser *self, uint8_t pos, char c)
 	}
 }
 
-static int csi(struct mt_parser *self, char c)
+static void do_csi_dec(struct mt_parser *self, char c)
+{
+	unsigned int i;
+
+	if (c != 'l' && c != 'h')
+		fprintf(stderr, "Invalid DECCSI priv %c\n", c);
+
+	uint8_t val = c == 'l' ? 0 : 1;
+
+	for (i = 0; i < self->par_cnt; i++) {
+		switch (self->pars[i]) {
+		case 25:
+			mt_sbuf_cursor_visible(self->sbuf, val);
+		break;
+		case 12:
+			fprintf(stderr, "TODO: Cursor blink %c\n", c);
+		break;
+		case 2004:
+			fprintf(stderr, "TODO: Bracketed paste mode %c\n", c);
+		break;
+		default:
+			fprintf(stderr, "Unhandled DECCSI %u %c\n",
+				self->pars[i], c);
+		}
+	}
+}
+
+static int csi_parse_pars(struct mt_parser *self, char c, char dec)
 {
 	switch (c) {
 	case '0' ... '9':
@@ -277,7 +336,12 @@ static int csi(struct mt_parser *self, char c)
 	break;
 	default:
 		self->par_cnt += !!self->par_t;
-		do_csi(self, c);
+
+		if (dec)
+			do_csi_dec(self, c);
+		else
+			do_csi(self, c);
+
 		memset(self->pars, 0, sizeof(self->pars));
 		self->par_cnt = 0;
 		self->par_t = 0;
@@ -288,6 +352,11 @@ static int csi(struct mt_parser *self, char c)
 	return 0;
 }
 
+static int csi(struct mt_parser *self, char c)
+{
+	return csi_parse_pars(self, c, 0);
+}
+
 static void tab(struct mt_parser *self)
 {
 	mt_coord c_col = mt_sbuf_cursor_col(self->sbuf);
@@ -295,44 +364,9 @@ static void tab(struct mt_parser *self)
 	mt_sbuf_cursor_move(self->sbuf, 8 - (c_col % 8), 0);
 }
 
-static void do_csi_priv(struct mt_parser *self, char c)
+static int csi_dec(struct mt_parser *self, char c)
 {
-	if (c != 'l' && c != 'h')
-		fprintf(stderr, "Invalid CSI priv %c\n", c);
-
-	uint8_t val = c == 'l' ? 0 : 1;
-
-	switch (self->csi_priv) {
-	case 25:
-		mt_sbuf_cursor_visible(self->sbuf, val);
-	break;
-	case 12:
-		fprintf(stderr, "TODO: Cursor blink %c\n", c);
-	break;
-	case 2004:
-		fprintf(stderr, "TODO: Bracketed paste mode %c\n", c);
-	break;
-	default:
-		fprintf(stderr, "Unhandled CSI priv %u %c\n",
-			self->csi_priv, c);
-	}
-
-}
-
-static int csi_priv(struct mt_parser *self, char c)
-{
-	switch (c) {
-	case '0' ... '9':
-		self->csi_priv *= 10;
-		self->csi_priv += c - '0';
-	break;
-	default:
-		do_csi_priv(self, c);
-		self->csi_priv = 0;
-		return 1;
-	}
-
-	return 0;
+	return csi_parse_pars(self, c, 1);
 }
 
 /*
@@ -352,7 +386,7 @@ static int osc(struct mt_parser *self, char c)
 
 static void next_char(struct mt_parser *self, char c)
 {
-	fprintf(stderr, "0x%02x %c\n", c, isprint(c) ? c : ' ');
+	//fprintf(stderr, "0x%02x %c\n", c, isprint(c) ? c : ' ');
 	switch (self->state) {
 	case VT_DEF:
 		switch (c) {
@@ -409,6 +443,10 @@ static void next_char(struct mt_parser *self, char c)
 			fprintf(stderr, "TODO: Restore cursor\n");
 			self->state = VT_DEF;
 		break;
+		case 'c':
+			mt_sbuf_RIS(self->sbuf);
+			self->state = VT_DEF;
+		break;
 		case '=': /* Set alternate keypad mode */
 		case '>': /* Set numeric keypad mode */
 			self->state = VT_DEF;
@@ -422,10 +460,13 @@ static void next_char(struct mt_parser *self, char c)
 	case VT_CSI:
 		switch (c) {
 		case '?':
-			self->state = VT_CSI_PRIV;
+			self->state = VT_CSI_DEC;
 		break;
 		case '>':
 			self->state = VT_CSI_DA2;
+		break;
+		case '!':
+			self->state = VT_CSI_SOFT_RESET;
 		break;
 		default:
 			if (csi(self, c))
@@ -437,14 +478,18 @@ static void next_char(struct mt_parser *self, char c)
 		if (osc(self, c))
 			self->state = VT_DEF;
 	break;
-	case VT_CSI_PRIV:
-		if (csi_priv(self, c))
+	case VT_CSI_DEC:
+		if (csi_dec(self, c))
 			self->state = VT_DEF;
 	break;
 	case VT_CSI_DA2:
 		if (c == 'c')
 			self->state = VT_DEF;
 		//TODO: response CSI61;1;1c
+	break;
+	case VT_CSI_SOFT_RESET:
+		mt_sbuf_DECSTR(self->sbuf);
+		self->state = VT_DEF;
 	break;
 	case VT_SCS_G0:
 		set_charset(self, 0, c);

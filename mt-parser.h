@@ -14,8 +14,9 @@ enum mt_state {
 	VT_ESC,
 	VT_OSC,
 	VT_CSI,
-	VT_CSI_PRIV,
+	VT_CSI_DEC,
 	VT_CSI_DA2,
+	VT_CSI_SOFT_RESET,
 	VT_SCS_G0,
 	VT_SCS_G1,
 	VT52_ESC_Y,
@@ -30,8 +31,6 @@ struct mt_parser {
 	uint8_t fg_col:3;
 	uint8_t bg_col:3;
 	uint8_t par_t:1;
-
-	uint16_t csi_priv;
 
 	uint16_t pars[MT_MAX_CSI_PARS];
 	uint8_t par_cnt;

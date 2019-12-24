@@ -100,6 +100,14 @@ static inline mt_coord mt_sbuf_cursor_col(struct mt_sbuf *self)
 	return self->cur_col;
 }
 
+/*
+ * DECSTR soft terminal reset.
+ */
+static inline void mt_sbuf_DECSTR(struct mt_sbuf *self)
+{
+	//TODO!
+}
+
 void mt_sbuf_insert_blank(struct mt_sbuf *self, uint16_t blanks);
 
 void mt_sbuf_del_chars(struct mt_sbuf *self, uint16_t dels);
@@ -168,5 +176,18 @@ void mt_sbuf_erase(struct mt_sbuf *self, enum mt_sbuf_erase_t type);
 void mt_sbuf_putc(struct mt_sbuf *self, const char c);
 
 void mt_sbuf_dump_screen(struct mt_sbuf *self);
+
+/*
+ * RIS reset to initial state.
+ */
+static inline void mt_sbuf_RIS(struct mt_sbuf *self)
+{
+	self->sel_charset = 0;
+	self->charset[0] = 'B';
+	self->charset[1] = '0';
+
+	mt_sbuf_erase(self, MT_SBUF_ERASE_SCREEN);
+	mt_sbuf_cursor_set(self, 0, 0);
+}
 
 #endif /* MT_SBUF__ */
