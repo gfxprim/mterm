@@ -131,19 +131,25 @@ int mt_sbuf_cursor_move(struct mt_sbuf *self, mt_coord col_inc, mt_coord row_inc
 	return ret;
 }
 
+/*
+ * Insert blank spaces at current position, shifts line to the right.
+ */
 void mt_sbuf_insert_blank(struct mt_sbuf *self, uint16_t blanks)
 {
-	mt_coord col = self->cur_col;
-	mt_coord row = self->cur_row;
+	struct mt_char *row = mt_sbuf_row(self, self->cur_row);
+	struct mt_char space = {};
 	uint16_t i;
 
 	unset_cursor(self);
 
-	for (i = 0; i < blanks; i++)
-		mt_sbuf_putc(self, ' ');
+	for (i = self->cols-1; i >= self->cur_col+blanks; i--)
+		row[i] = row[i-blanks];
 
-	self->cur_col = col;
-	self->cur_row = row;
+	for (i = 0; i < blanks && i < self->cols; i++)
+		row[self->cur_col + i] = space;
+
+	if (self->screen)
+		self->screen->damage(self->screen->priv, self->cur_col, self->cur_row, self->cols-1, self->cur_row+1);
 
 	set_cursor(self);
 }

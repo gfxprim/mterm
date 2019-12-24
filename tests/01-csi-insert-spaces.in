@@ -1,2 +1,2 @@
 10 10
-\e[2@hello
+hello\b\b\e[2@
