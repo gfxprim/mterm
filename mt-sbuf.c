@@ -43,7 +43,7 @@ int mt_sbuf_resize(struct mt_sbuf *self, unsigned int n_cols, unsigned int n_row
 	self->sbuf = new_buf;
 	self->sbuf_sz = sbuf_sz;
 
-	if (self->screen) {
+	if (self->screen && self->screen->damage) {
 		self->screen->damage(self->screen->priv, 0, 0, n_cols, n_rows);
 		//TODO: Redraw!
 	}
@@ -64,7 +64,7 @@ static void mt_sbuf_scroll(struct mt_sbuf *self, mt_coord inc)
 
 	memset(row, 0, sizeof(struct mt_char) * self->cols);
 
-	if (self->screen)
+	if (self->screen && self->screen->scroll)
 		self->screen->scroll(self->screen->priv, 1);
 }
 
@@ -72,17 +72,23 @@ static void unset_cursor(struct mt_sbuf *self)
 {
 	struct mt_char *cur = mt_sbuf_char(self, self->cur_col, self->cur_row);
 
+	if (self->cursor_hidden)
+		return;
+
 	//fprintf(stderr, "Unset cursor\n");
 
 	cur->reverse = 0;
 
-	if (self->screen)
-		self->screen->cursor(self->cur_col, self->cur_row);
+	if (self->screen && self->screen->cursor)
+		self->screen->cursor(self->cur_col, self->cur_row, 0);
 }
 
 static void set_cursor(struct mt_sbuf *self)
 {
 	struct mt_char *cur = mt_sbuf_char(self, self->cur_col, self->cur_row);
+
+	if (self->cursor_hidden)
+		return;
 
 	//fprintf(stderr, "Set cursor\n");
 
@@ -93,8 +99,8 @@ static void set_cursor(struct mt_sbuf *self)
 		cur->bg_col = self->cur_char.bg_col;
 	}
 
-	if (self->screen)
-		self->screen->cursor(self->cur_col, self->cur_row);
+	if (self->screen && self->screen->cursor)
+		self->screen->cursor(self->cur_col, self->cur_row, 1);
 }
 
 int mt_sbuf_cursor_move(struct mt_sbuf *self, mt_coord col_inc, mt_coord row_inc)
@@ -148,7 +154,31 @@ void mt_sbuf_insert_blank(struct mt_sbuf *self, uint16_t blanks)
 	for (i = 0; i < blanks && i < self->cols; i++)
 		row[self->cur_col + i] = space;
 
-	if (self->screen)
+	if (self->screen && self->screen->damage)
+		self->screen->damage(self->screen->priv, self->cur_col, self->cur_row, self->cols-1, self->cur_row+1);
+
+	set_cursor(self);
+}
+
+/*
+ * Delete characters from cursor to the right, line shifts left.
+ */
+void mt_sbuf_del_chars(struct mt_sbuf *self, uint16_t dels)
+{
+	struct mt_char *row = mt_sbuf_row(self, self->cur_row);
+	struct mt_char space = {};
+
+	uint16_t i;
+
+	unset_cursor(self);
+
+	for (i = self->cur_col; i < self->cols - dels; i++)
+		row[i] = row[i+dels];
+
+	for (i = self->cols - dels - 1; i < self->cols; i++)
+		row[i] = space;
+
+	if (self->screen && self->screen->damage)
 		self->screen->damage(self->screen->priv, self->cur_col, self->cur_row, self->cols-1, self->cur_row+1);
 
 	set_cursor(self);
@@ -267,7 +297,7 @@ void mt_sbuf_putc(struct mt_sbuf *self, char c)
 		mc->reverse = 0;
 	}
 
-	if (self->screen)
+	if (self->screen && self->screen->damage)
 		self->screen->damage(self->screen->priv, self->cur_col, self->cur_row, self->cur_col+1, self->cur_row+1);
 
 	mt_sbuf_cursor_inc(self);
@@ -279,7 +309,7 @@ static void erase(struct mt_sbuf *self, mt_coord s_col, mt_coord s_row,
 	struct mt_char *row;
 	mt_coord r;
 
-	if (self->screen)
+	if (self->screen && self->screen->erase)
 		self->screen->erase(s_col, s_row, e_col, e_row);
 
 	for (r = s_row; r <= e_row; r++) {

@@ -72,8 +72,8 @@ static gp_backend *win;
 static struct mt_damage damage;
 static struct mt_sbuf *sbuf;
 
-#define FONT_DEF gp_font_haxor_narrow_16
-#define FONT_BOLD gp_font_haxor_narrow_bold_16
+#define FONT_DEF gp_font_haxor_narrow_17
+#define FONT_BOLD gp_font_haxor_narrow_bold_17
 
 static void draw_char(struct mt_char *c, gp_coord col, gp_coord row)
 {
@@ -141,7 +141,7 @@ static void do_scroll(int lines)
 	gp_backend_flip(win);
 }
 
-static void cursor(mt_coord col, mt_coord row)
+static void cursor(mt_coord col, mt_coord row, uint8_t set)
 {
 	struct mt_char *c;
 

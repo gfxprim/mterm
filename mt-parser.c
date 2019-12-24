@@ -174,6 +174,9 @@ void csi_m(struct mt_parser *self)
 	}
 }
 
+/*
+ * Inserts blank spaces, line shifts to left.
+ */
 static void csi_insert_spaces(struct mt_parser *self)
 {
 	unsigned int i;
@@ -182,6 +185,19 @@ static void csi_insert_spaces(struct mt_parser *self)
 		self->pars[0] = 1;
 
 	mt_sbuf_insert_blank(self->sbuf, self->pars[0]);
+}
+
+/*
+ * Delete characters from cursor to right, line shifts to left.
+ */
+static void csi_del_chars(struct mt_parser *self)
+{
+	unsigned int i;
+
+	if (!self->par_cnt)
+		self->pars[0] = 1;
+
+	mt_sbuf_del_chars(self->sbuf, self->pars[0]);
 }
 
 static void csi_t(struct mt_parser *self)
@@ -200,6 +216,9 @@ static void do_csi(struct mt_parser *self, char csi)
 	switch (csi) {
 	case '@':
 		csi_insert_spaces(self);
+	break;
+	case 'P':
+		csi_del_chars(self);
 	break;
 	case 'A':
 	case 'B':

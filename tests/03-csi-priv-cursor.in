@@ -1,2 +1,2 @@
 2 4
-\e[?25laa\n\nb
+\e[?25laa\n\nb\e[?25h

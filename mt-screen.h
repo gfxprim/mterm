@@ -6,7 +6,7 @@
 struct mt_screen {
 	void (*damage)(void *priv, mt_coord s_col, mt_coord s_row, mt_coord e_col, mt_coord e_row);
 	void (*scroll)(void *priv, int lines);
-	void (*cursor)(mt_coord col, mt_coord row);
+	void (*cursor)(mt_coord col, mt_coord row, uint8_t set);
 	void (*erase)(mt_coord o_col, mt_coord o_row, mt_coord n_col, mt_coord n_row);
 
 	void *priv;

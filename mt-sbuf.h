@@ -102,6 +102,8 @@ static inline mt_coord mt_sbuf_cursor_col(struct mt_sbuf *self)
 
 void mt_sbuf_insert_blank(struct mt_sbuf *self, uint16_t blanks);
 
+void mt_sbuf_del_chars(struct mt_sbuf *self, uint16_t dels);
+
 static inline struct mt_char *mt_sbuf_row(struct mt_sbuf *self, mt_coord row)
 {
 	return &self->sbuf[((row + self->sbuf_off) % self->rows) * self->cols];

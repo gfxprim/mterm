@@ -4,9 +4,10 @@ failed=0
 passed=0
 
 for i in *.in; do
-	../mterm-test $i > tmp
+	../mterm-test $i > tmp 2> /dev/null
 	if [ $? -ne 0 ]; then
 		echo "************** $i **************"
+		../mterm-test -v $i > tmp
 		echo "Test finished with error!!!";
 		echo "************************************"
 		failed=$((failed+1))

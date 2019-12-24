@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #define MT_ERROR(str) do { \
 	fprintf(stderr, "%s: %i: "str"\n", __FILE__, __LINE__); \
