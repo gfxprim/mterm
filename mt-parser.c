@@ -352,7 +352,7 @@ static int osc(struct mt_parser *self, char c)
 
 static void next_char(struct mt_parser *self, char c)
 {
-	//fprintf(stderr, "0x%02x %c\n", c, isprint(c) ? c : ' ');
+	fprintf(stderr, "0x%02x %c\n", c, isprint(c) ? c : ' ');
 	switch (self->state) {
 	case VT_DEF:
 		switch (c) {
@@ -400,6 +400,14 @@ static void next_char(struct mt_parser *self, char c)
 		break;
 		case ')':
 			self->state = VT_SCS_G1;
+		break;
+		case '7':
+			fprintf(stderr, "TODO: Save cursor\n");
+			self->state = VT_DEF;
+		break;
+		case '8':
+			fprintf(stderr, "TODO: Restore cursor\n");
+			self->state = VT_DEF;
 		break;
 		case '=': /* Set alternate keypad mode */
 		case '>': /* Set numeric keypad mode */

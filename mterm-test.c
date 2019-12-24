@@ -32,6 +32,11 @@ static void make_buf(char *buf)
 				buf[out++] = 0x08;
 				in+=2;
 			break;
+			/* Two digit octal e.g. \016 */
+			case '0':
+				buf[out++] = 8*(buf[in+2] - '0') + buf[in+3] - '0';
+				in+=4;
+			break;
 			default:
 				goto next;
 			}

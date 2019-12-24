@@ -76,7 +76,7 @@ static inline void mt_sbuf_set_charset(struct mt_sbuf *self, unsigned int Gx, ch
  */
 static inline void mt_sbuf_shift_in(struct mt_sbuf *self)
 {
-	self->sel_charset = 1;
+	self->sel_charset = 0;
 }
 
 /*
