@@ -5,6 +5,13 @@ passed=0
 
 for i in *.in; do
 	../mterm-test $i > tmp
+	if [ $? -ne 0 ]; then
+		echo "************** $i **************"
+		echo "Test finished with error!!!";
+		echo "************************************"
+		failed=$((failed+1))
+		continue;
+	fi
 	OUT=$(echo $i | sed s/\.in$/\.out/)
 	if ! [ -e "$OUT" ]; then
 		echo "**** File $OUT does not exits"
