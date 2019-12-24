@@ -237,6 +237,19 @@ static void csi_lh(struct mt_parser *self, char csi)
 	}
 }
 
+/*
+ * DA - Device Attribute
+ *
+ * Sends device attributes to application.
+ */
+static void csi_c(struct mt_parser *self)
+{
+	if (!self->response)
+		return;
+
+	self->response(self->response_fd, "\e[?6c");
+}
+
 static void do_csi(struct mt_parser *self, char csi)
 {
 	//fprintf(stderr, "CSI %c %i\n", csi, pars[0]);
@@ -262,6 +275,9 @@ static void do_csi(struct mt_parser *self, char csi)
 	break;
 	case 'K':
 		csi_K(self);
+	break;
+	case 'c':
+		csi_c(self);
 	break;
 	case 'm':
 		csi_m(self);

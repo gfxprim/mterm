@@ -413,6 +413,11 @@ void init_graphics(void)
 	gp_backend_flip(win);
 }
 
+static void writefd(int fd, const char *str)
+{
+	write(fd, str, strlen(str));
+}
+
 int main(void)
 {
 	gp_event ev;
@@ -420,6 +425,10 @@ int main(void)
 
 	fd = run_vt_shell();
 	init_mterm();
+
+	parser.response_fd = fd;
+	parser.response = writefd;
+
 	init_graphics();
 
 	for (;;) {

@@ -32,6 +32,12 @@ struct mt_parser {
 	uint8_t bg_col:3;
 	uint8_t par_t:1;
 
+	/*
+	 * Callback to optionally send response to application.
+	 */
+	void (*response)(int fd, const char *string);
+	int response_fd;
+
 	uint16_t pars[MT_MAX_CSI_PARS];
 	uint8_t par_cnt;
 };
