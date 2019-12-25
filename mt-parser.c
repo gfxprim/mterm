@@ -250,6 +250,26 @@ static void csi_c(struct mt_parser *self)
 	self->response(self->response_fd, "\e[?6c");
 }
 
+/*
+ * HVP - Horizontal and Vertical Position
+ *
+ * Sets cursor position.
+ */
+static void csi_f(struct mt_parser *self)
+{
+	if (self->par_cnt != 2) {
+		self->pars[0] = 1;
+		self->pars[1] = 1;
+	}
+
+	if (self->pars[0] == 0 && self->pars[1] == 0) {
+		self->pars[0] = 1;
+		self->pars[1] = 1;
+	}
+
+	mt_sbuf_cursor_set(self->sbuf, self->pars[0] - 1, self->pars[1] - 1);
+}
+
 static void do_csi(struct mt_parser *self, char csi)
 {
 	//fprintf(stderr, "CSI %c %i\n", csi, pars[0]);
@@ -278,6 +298,9 @@ static void do_csi(struct mt_parser *self, char csi)
 	break;
 	case 'c':
 		csi_c(self);
+	break;
+	case 'f':
+		csi_f(self);
 	break;
 	case 'm':
 		csi_m(self);
