@@ -506,11 +506,27 @@ static void next_char(struct mt_parser *self, char c)
 		case '>': /* Set numeric keypad mode */
 			self->state = VT_DEF;
 		break;
+		case '#':
+			self->state = VT_ESC_DEC;
+		break;
 		default:
-			fprintf(stderr, "Unhandled esc %c %02x\n", isprint(c) ? c : ' ', c);
+			fprintf(stderr, "Unhandled ESC %c %02x\n", isprint(c) ? c : ' ', c);
 			self->state = VT_DEF;
 		break;
 		}
+	break;
+	case VT_ESC_DEC:
+		switch (c) {
+		/* DECALN - Fills screen with test aligment pattern + cursor home */
+		case '8':
+			//TODO: Fill screen with 'E'
+			mt_sbuf_cursor_set(self->sbuf, 0, 0);
+		break;
+		default:
+			fprintf(stderr, "Unhandled DEC ESC %c %02x\n", isprint(c) ? c : ' ', c);
+		}
+
+		self->state = VT_DEF;
 	break;
 	case VT_CSI:
 		switch (c) {
