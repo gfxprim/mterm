@@ -31,7 +31,7 @@ int mt_sbuf_resize(struct mt_sbuf *self, unsigned int n_cols, unsigned int n_row
 		mt_coord row;
 		size_t min_cols = MT_MIN(self->cols, (int)n_cols);
 
-		for (row = 0; row < self->rows; row++) {
+		for (row = 0; row < MT_MIN(self->rows, (int)n_rows); row++) {
 			struct mt_char *o_row = &self->sbuf[row * self->cols];
 			struct mt_char *n_row = &new_buf[row * n_cols];
 			memcpy(n_row, o_row, min_cols * sizeof(struct mt_char));
