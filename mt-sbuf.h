@@ -156,6 +156,10 @@ int mt_sbuf_resize(struct mt_sbuf *self, unsigned int n_cols, unsigned int n_row
 
 int mt_sbuf_cursor_move(struct mt_sbuf *self, mt_coord col_inc, mt_coord row_inc);
 
+void mt_sbuf_cursor_up(struct mt_sbuf *self);
+
+void mt_sbuf_cursor_down(struct mt_sbuf *self);
+
 void mt_sbuf_newline(struct mt_sbuf *self);
 
 void mt_sbuf_cursor_set(struct mt_sbuf *self, mt_coord col, mt_coord row);

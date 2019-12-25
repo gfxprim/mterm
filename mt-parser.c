@@ -482,7 +482,23 @@ static void next_char(struct mt_parser *self, char c)
 			fprintf(stderr, "TODO: Restore cursor\n");
 			self->state = VT_DEF;
 		break;
+		case 'D':
+			/* IND - Index, moves cursor down - scrolls */
+			mt_sbuf_cursor_down(self->sbuf);
+			self->state = VT_DEF;
+		break;
+		case 'E':
+			/* NEL - Next line */
+			mt_sbuf_newline(self->sbuf);
+			self->state = VT_DEF;
+		break;
+		case 'M':
+			/* RI - Reverse Index, moves cursor up - scrolls */
+			mt_sbuf_cursor_up(self->sbuf);
+			self->state = VT_DEF;
+		break;
 		case 'c':
+			/* RIS - Reset to Inital State */
 			mt_sbuf_RIS(self->sbuf);
 			self->state = VT_DEF;
 		break;

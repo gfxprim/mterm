@@ -58,6 +58,8 @@ static void mt_sbuf_scroll(struct mt_sbuf *self, mt_coord inc)
 {
 	struct mt_char *row;
 
+	//TODO: Increment!
+
 	self->sbuf_off = (self->sbuf_off + 1) % (self->sbuf_sz / self->cols);
 
 	row = mt_sbuf_row(self, self->rows - 1);
@@ -135,6 +137,35 @@ int mt_sbuf_cursor_move(struct mt_sbuf *self, mt_coord col_inc, mt_coord row_inc
 	set_cursor(self);
 
 	return ret;
+}
+
+static void cursor_up_donw(struct mt_sbuf *self, int8_t inc)
+{
+	unset_cursor(self);
+
+	self->cur_row += inc;
+
+	if (self->cur_row < 0) {
+		mt_sbuf_scroll(self, self->cur_row);
+		self->cur_row = 0;
+	}
+
+	if (self->cur_row >= self->rows) {
+		mt_sbuf_scroll(self, self->cur_row - self->rows + 1);
+		self->cur_row = self->rows - 1;
+	}
+
+	set_cursor(self);
+}
+
+void mt_sbuf_cursor_up(struct mt_sbuf *self)
+{
+	cursor_up_donw(self, -1);
+}
+
+void mt_sbuf_cursor_down(struct mt_sbuf *self)
+{
+	cursor_up_donw(self, 1);
 }
 
 /*
