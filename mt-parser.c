@@ -58,19 +58,6 @@ static void csi_K(struct mt_parser *self)
 }
 
 /*
- * Set cursor position.
- */
-void csi_H(struct mt_parser *self)
-{
-	if (self->par_cnt == 2) {
-		mt_sbuf_cursor_set(self->sbuf, self->pars[1] - 1, self->pars[0] - 1);
-		return;
-	}
-
-	mt_sbuf_cursor_set(self->sbuf, 0, 0);
-}
-
-/*
  * Clear screen
  *
  * 0 -- clear from cursor to the end (default)
@@ -205,9 +192,19 @@ static void csi_t(struct mt_parser *self)
 	fprintf(stderr, "CSI t\n");
 }
 
+/*
+ * DECSTBM - Set Top and Bottom Margins
+ *
+ *
+ */
 static void csi_r(struct mt_parser *self)
 {
-	fprintf(stderr, "SCROLL REGION\n");
+	if (self->par_cnt != 2) {
+		self->pars[0] = 0;
+		self->pars[1] = self->sbuf->rows - 1;
+	}
+
+	fprintf(stderr, "SCROLL REGION %i %i\n", self->pars[0], self->pars[1]);
 }
 
 /*
@@ -251,23 +248,32 @@ static void csi_c(struct mt_parser *self)
 }
 
 /*
+ * CUP -- Cursor Position
+ */
+void csi_H(struct mt_parser *self)
+{
+	if (self->par_cnt == 2) {
+		if (self->pars[0] == 0)
+			self->pars[0] = 1;
+
+		if (self->pars[1] == 0)
+			self->pars[1] = 1;
+
+		mt_sbuf_cursor_set(self->sbuf, self->pars[1] - 1, self->pars[0] - 1);
+		return;
+	}
+
+	mt_sbuf_cursor_set(self->sbuf, 0, 0);
+}
+
+/*
  * HVP - Horizontal and Vertical Position
  *
  * Sets cursor position.
  */
 static void csi_f(struct mt_parser *self)
 {
-	if (self->par_cnt != 2) {
-		self->pars[0] = 1;
-		self->pars[1] = 1;
-	}
-
-	if (self->pars[0] == 0 && self->pars[1] == 0) {
-		self->pars[0] = 1;
-		self->pars[1] = 1;
-	}
-
-	mt_sbuf_cursor_set(self->sbuf, self->pars[0] - 1, self->pars[1] - 1);
+	csi_H(self);
 }
 
 static void do_csi(struct mt_parser *self, char csi)
