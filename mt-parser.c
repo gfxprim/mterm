@@ -5,14 +5,14 @@
 /*
  * Move cursor:
  *
- * A - up
- * B - down
- * C - right
- * D - left
+ * A - CUU Cursor Up
+ * B - CUD Cursor Down
+ * C - CUF Cursor Forward
+ * D - CUB Cursor Backward
  */
 static void csi_cursor(struct mt_parser *self, char csi)
 {
-	int inc = self->par_cnt ? self->pars[0] : 1;
+	int inc = self->pars[0] ? self->pars[0] : 1;
 
 	switch (csi) {
 	case 'A':
