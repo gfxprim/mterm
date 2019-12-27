@@ -125,7 +125,7 @@ static void do_damage(void)
 	update_region(damage.s_col, damage.e_col, damage.s_row, damage.e_row);
 }
 
-static void do_scroll(int lines)
+static void do_scroll_down(int lines)
 {
 	gp_coord mid_y = lines * cell_h;
 	gp_coord end_y = gp_pixmap_h(win->pixmap) - 1;
@@ -139,6 +139,37 @@ static void do_scroll(int lines)
 	gp_blit_xyxy(win->pixmap, 0, mid_y, end_x, end_y, win->pixmap, 0, 0);
 	gp_fill_rect_xyxy(win->pixmap, 0, end_y - mid_y, end_x, end_y, bg);
 	gp_backend_flip(win);
+}
+
+static void do_scroll_up(int lines)
+{
+	gp_coord mid_y = -lines * cell_h;
+	gp_coord end_y = gp_pixmap_h(win->pixmap) - 1;
+	gp_coord end_x = gp_pixmap_w(win->pixmap) - 1;
+
+	if (mid_y >= end_y)
+		return;
+
+	gp_pixel bg = bg_col(mt_sbuf_cur_char(sbuf));
+	int col; 
+
+	//TODO: Reverse blit?
+	for (col = end_y/cell_h + lines - 1; col >= 0; col--) {
+		gp_coord y = col * cell_h;
+		gp_blit_xyxy(win->pixmap, 0, y, end_x, y + cell_h,
+		             win->pixmap, 0, mid_y + y);
+	}
+
+	gp_fill_rect_xyxy(win->pixmap, 0, 0, end_x, mid_y, bg);
+	gp_backend_flip(win);
+}
+
+static void do_scroll(int lines)
+{
+	if (lines > 0)
+		do_scroll_down(lines);
+	else
+		do_scroll_up(lines);
 }
 
 static void cursor(mt_coord col, mt_coord row, uint8_t set)

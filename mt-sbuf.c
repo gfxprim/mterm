@@ -54,20 +54,41 @@ int mt_sbuf_resize(struct mt_sbuf *self, unsigned int n_cols, unsigned int n_row
 	return 0;
 }
 
-static void mt_sbuf_scroll(struct mt_sbuf *self, mt_coord inc)
+static void clear_row(struct mt_sbuf *self, mt_coord row)
 {
-	struct mt_char *row;
+	struct mt_char *row_addr = mt_sbuf_row(self, row);
 
-	//TODO: Increment!
+	memset(row_addr, 0, sizeof(struct mt_char) * self->cols);
+}
 
+static void scroll_up(struct mt_sbuf *self)
+{
+	if (self->sbuf_off == 0)
+		self->sbuf_off = (self->sbuf_sz / self->cols) - 1;
+	else
+		self->sbuf_off -= 1;
+
+	clear_row(self, 0);
+}
+
+static void scroll_down(struct mt_sbuf *self)
+{
 	self->sbuf_off = (self->sbuf_off + 1) % (self->sbuf_sz / self->cols);
 
-	row = mt_sbuf_row(self, self->rows - 1);
+	clear_row(self, self->rows - 1);
+}
 
-	memset(row, 0, sizeof(struct mt_char) * self->cols);
+static void mt_sbuf_scroll(struct mt_sbuf *self, mt_coord inc)
+{
+	//TODO: Do we need more than sign of inc?
+
+	if (inc < 0)
+		scroll_up(self);
+	else
+		scroll_down(self);
 
 	if (self->screen && self->screen->scroll)
-		self->screen->scroll(self->screen->priv, 1);
+		self->screen->scroll(self->screen->priv, inc);
 }
 
 static void unset_cursor(struct mt_sbuf *self)
