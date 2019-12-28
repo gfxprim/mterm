@@ -29,7 +29,11 @@ static void make_buf(char *buf)
 				in+=2;
 			break;
 			case 'b':
-				buf[out++] = 0x08;
+				buf[out++] = '\b';
+				in+=2;
+			break;
+			case 't':
+				buf[out++] = '\t';
 				in+=2;
 			break;
 			/* Two digit octal e.g. \016 */

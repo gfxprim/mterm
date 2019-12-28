@@ -11,16 +11,19 @@ struct mt_sbuf;
 
 enum mt_state {
 	VT_DEF = 0,
-	VT_ESC,
-	VT_ESC_DEC,
-	VT_OSC,
-	VT_CSI,
-	VT_CSI_DEC,
-	VT_CSI_DA2,
-	VT_CSI_SOFT_RESET,
-	VT_SCS_G0,
-	VT_SCS_G1,
-	VT52_ESC_Y,
+	VT_ESC = 0x01,
+	VT_ESC_DEC = 0x02,
+	VT_OSC = 0x03,
+
+	/* CSI */
+	VT_CSI_ENTRY = 0x04,
+	VT_CSI_PARAM = 0x14,
+	VT_CSI_IGNORE = 0x24,
+	VT_CSI_INTERMEDIATE = 0x34,
+
+	VT_SCS_G0 = 0x08,
+	VT_SCS_G1 = 0x09,
+	VT52_ESC_Y = 0x0A,
 };
 
 #define MT_MAX_CSI_PARS 10
@@ -39,6 +42,7 @@ struct mt_parser {
 	void (*response)(int fd, const char *string);
 	int response_fd;
 
+	char csi_intermediate;
 	uint16_t pars[MT_MAX_CSI_PARS];
 	uint8_t par_cnt;
 };

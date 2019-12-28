@@ -278,8 +278,6 @@ static void csi_f(struct mt_parser *self)
 
 static void do_csi(struct mt_parser *self, char csi)
 {
-	//fprintf(stderr, "CSI %c %i\n", csi, pars[0]);
-
 	switch (csi) {
 	case '@':
 		csi_insert_spaces(self);
@@ -366,40 +364,126 @@ static void do_csi_dec(struct mt_parser *self, char c)
 	}
 }
 
-static int csi_parse_pars(struct mt_parser *self, char c, char dec)
+static void csi_dispatch(struct mt_parser *self, char c)
+{
+	switch (self->csi_intermediate) {
+	case 0:
+		do_csi(self, c);
+	break;
+	case '?':
+		do_csi_dec(self, c);
+	break;
+	/* CSI DECSTR - Soft Terminal Reset */
+	case '!':
+		if (c == 'p')
+			mt_sbuf_DECSTR(self->sbuf);
+		else
+			fprintf(stderr, "Unhandled CSI!%c\n", c);
+	break;
+	/* CSI DA2 - Secondary Device Attributes */
+	case '<':
+		if (c == 'c')
+			self->response(self->response_fd, "\e[32;1;1c");
+		else
+			fprintf(stderr, "Unhandled CSI<%c\n", c);
+	break;
+	}
+}
+
+static void csi_parse_param(struct mt_parser *self, char c)
 {
 	switch (c) {
+	/* Parse number param */
 	case '0' ... '9':
 		self->pars[self->par_cnt] *= 10;
 		self->pars[self->par_cnt] += c - '0';
 		self->par_t = 1;
 	break;
+	/* Next CSI parameter */
 	case ';':
 		self->par_cnt = (self->par_cnt + 1) % MT_MAX_CSI_PARS;
 		self->pars[self->par_cnt] = 0;
 		self->par_t = 0;
 	break;
-	default:
-		self->par_cnt += !!self->par_t;
-
-		if (dec)
-			do_csi_dec(self, c);
-		else
-			do_csi(self, c);
-
-		memset(self->pars, 0, sizeof(self->pars));
-		self->par_cnt = 0;
-		self->par_t = 0;
-		return 1;
-	break;
 	}
-
-	return 0;
 }
 
-static int csi(struct mt_parser *self, char c)
+
+/*
+ * CSI state machine, control characters are handled in the main loop.
+ */
+static void csi(struct mt_parser *self, char c)
 {
-	return csi_parse_pars(self, c, 0);
+	/* 0x40 - 0x7E is the only way how to get out of ignore state */
+	if (self->state == VT_CSI_IGNORE) {
+		switch (c) {
+		case '@' ... '~':
+			self->state = VT_DEF;
+			return;
+		}
+	}
+
+	switch (c) {
+	/* 0x20 - 0x2F enter intermedate */
+	case ' ' ... '/':
+		self->csi_intermediate = c;
+		self->state = VT_CSI_INTERMEDIATE;
+		return;
+	/* 0x3A - simply invalid */
+	case ':':
+		self->state = VT_CSI_IGNORE;
+		return;
+	/* Dispatch CSI 0x40 ... 0x7E */
+	case '@' ... '~':
+		self->par_cnt += !!self->par_t;
+
+		csi_dispatch(self, c);
+
+		self->state = VT_DEF;
+
+		memset(self->pars, 0, sizeof(self->pars));
+		self->csi_intermediate = 0;
+		self->par_cnt = 0;
+		self->par_t = 0;
+		return;
+	/* DEL - ignored during CSI */
+	case 0x7F:
+		return;
+	}
+
+	switch (self->state) {
+	case VT_CSI_ENTRY:
+		switch (c) {
+		case '0' ... '9':
+		case ';':
+			csi_parse_param(self, c);
+			self->state = VT_CSI_PARAM;
+		break;
+		case '<' ... '?':
+			self->csi_intermediate = c;
+			self->state = VT_CSI_PARAM;	
+		break;
+		}
+	break;
+	case VT_CSI_PARAM:
+		switch (c) {
+		case '<' ... '?':
+			self->state = VT_CSI_IGNORE;
+		break;
+		case '0' ... '9':
+		case ';':
+			csi_parse_param(self, c);
+		break;
+		}
+	break;
+	case VT_CSI_INTERMEDIATE:
+		switch (c) {
+		case '0' ... '?':
+			self->state = VT_CSI_IGNORE;
+		break;
+		}
+	break;
+	}
 }
 
 static void tab(struct mt_parser *self)
@@ -407,11 +491,6 @@ static void tab(struct mt_parser *self)
 	mt_coord c_col = mt_sbuf_cursor_col(self->sbuf);
 
 	mt_sbuf_cursor_move(self->sbuf, 8 - (c_col % 8), 0);
-}
-
-static int csi_dec(struct mt_parser *self, char c)
-{
-	return csi_parse_pars(self, c, 1);
 }
 
 /*
@@ -429,38 +508,78 @@ static int osc(struct mt_parser *self, char c)
 	return 0;
 }
 
-static void next_char(struct mt_parser *self, char c)
+/*
+ * Some control chanracters may be interleaved with CSIs
+ */
+static void parser_ctrl_char(struct mt_parser *self, unsigned char c)
+{
+	switch (c) {
+	/* BEL 0x07 */
+	case '\a':
+		fprintf(stderr, "Bell!\n");
+	break;
+	/* BS 0x08 */
+	case '\b':
+		mt_sbuf_cursor_move(self->sbuf, -1, 0);
+	break;
+	/* TAB 0x09 */
+	case '\t':
+		tab(self);
+	break;
+	/* CR 0x0D */
+	case '\r':
+		mt_sbuf_cursor_set(self->sbuf, 0, -1);
+	break;
+	/* SO 0x0E*/
+	case '\016':
+		mt_sbuf_shift_out(self->sbuf);
+	break;
+	/* SI 0x0F */
+	case '\017':
+		mt_sbuf_shift_in(self->sbuf);
+	break;
+	/* ESC 0x1B */
+	case '\e':
+		self->state = VT_ESC;
+	break;
+	case '\f':
+	case '\v':
+	case '\n':
+		mt_sbuf_newline(self->sbuf);
+	break;
+	/* CSI */
+	case 0x9B:
+		self->state = VT_CSI_ENTRY;
+	break;
+	/* OSC */
+	case 0x9D:
+		self->state = VT_OSC;
+	break;
+	default:
+		fprintf(stderr, "Unhandled control char 0x%02x\n", c);
+	}
+}
+
+#define CONTROL_C0 0x00 ... 0x1f
+#define CONTROL_C1 0x80 ... 0x9f
+
+static void next_char(struct mt_parser *self, unsigned char c)
 {
 	//fprintf(stderr, "0x%02x %c\n", c, isprint(c) ? c : ' ');
-	switch (self->state) {
+
+	/*
+	 * Control characters are processed immediately.
+	 */
+	switch (c) {
+		case CONTROL_C0:
+		case CONTROL_C1:
+			parser_ctrl_char(self, c);
+		return;
+	}
+
+	switch ((self->state & 0x0f)) {
 	case VT_DEF:
 		switch (c) {
-		case '\e':
-			self->state = VT_ESC;
-		break;
-		case '\f':
-		case '\v':
-		case '\n':
-			mt_sbuf_newline(self->sbuf);
-		break;
-		case '\r':
-			mt_sbuf_cursor_set(self->sbuf, 0, -1);
-		break;
-		case '\t':
-			tab(self);
-		break;
-		case '\a':
-			fprintf(stderr, "Bell!\n");
-		break;
-		case '\016': /* SO */
-			mt_sbuf_shift_out(self->sbuf);
-		break;
-		case '\017': /* SI */
-			mt_sbuf_shift_in(self->sbuf);
-		break;
-		case 0x08: /* backspace */
-			mt_sbuf_cursor_move(self->sbuf, -1, 0);
-		break;
 		default:
 			mt_sbuf_putc(self->sbuf, c);
 		break;
@@ -469,7 +588,7 @@ static void next_char(struct mt_parser *self, char c)
 	case VT_ESC:
 		switch (c) {
 		case '[':
-			self->state = VT_CSI;
+			self->state = VT_CSI_ENTRY;
 		break;
 		case ']':
 			self->state = VT_OSC;
@@ -534,39 +653,12 @@ static void next_char(struct mt_parser *self, char c)
 
 		self->state = VT_DEF;
 	break;
-	case VT_CSI:
-		switch (c) {
-		case '?':
-			self->state = VT_CSI_DEC;
-		break;
-		case '>':
-			self->state = VT_CSI_DA2;
-		break;
-		case '!':
-			self->state = VT_CSI_SOFT_RESET;
-		break;
-		default:
-			if (csi(self, c))
-				self->state = VT_DEF;
-		break;
-		}
+	case VT_CSI_ENTRY:
+		csi(self, c);
 	break;
 	case VT_OSC:
 		if (osc(self, c))
 			self->state = VT_DEF;
-	break;
-	case VT_CSI_DEC:
-		if (csi_dec(self, c))
-			self->state = VT_DEF;
-	break;
-	case VT_CSI_DA2:
-		if (c == 'c')
-			self->state = VT_DEF;
-		//TODO: response CSI61;1;1c
-	break;
-	case VT_CSI_SOFT_RESET:
-		mt_sbuf_DECSTR(self->sbuf);
-		self->state = VT_DEF;
 	break;
 	case VT_SCS_G0:
 		set_charset(self, 0, c);
