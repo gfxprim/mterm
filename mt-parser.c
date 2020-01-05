@@ -481,6 +481,18 @@ static void csi(struct mt_parser *self, char c)
 	}
 }
 
+/*
+ * Device Control String
+ */
+static void dcs(struct mt_parser *self, char c)
+{
+	switch (c) {
+	case '@' ... '~':
+		self->state = VT_DEF;
+		return;
+	}
+}
+
 static void tab(struct mt_parser *self)
 {
 	mt_coord c_col = mt_sbuf_cursor_col(self->sbuf);
@@ -503,14 +515,25 @@ static int osc(struct mt_parser *self, char c)
 	return 0;
 }
 
-static void csi_entry(struct mt_parser *self)
+static void param_reset(struct mt_parser *self)
 {
-	self->state = VT_CSI_ENTRY;
-
 	memset(self->pars, 0, sizeof(self->pars));
 	self->csi_intermediate = 0;
 	self->par_cnt = 0;
 	self->par_t = 0;
+}
+
+static void csi_entry(struct mt_parser *self)
+{
+	self->state = VT_CSI_ENTRY;
+	param_reset(self);
+}
+
+static void dcs_entry(struct mt_parser *self)
+{
+	fprintf(stderr, "DCS!\n");
+	self->state = VT_DCS_ENTRY;
+	param_reset(self);
 }
 
 /*
@@ -551,6 +574,10 @@ static void parser_ctrl_char(struct mt_parser *self, unsigned char c)
 	case '\v':
 	case '\n':
 		mt_sbuf_newline(self->sbuf);
+	break;
+	/* DCS */
+	case 0x90:
+		dcs_entry(self);
 	break;
 	/* CSI */
 	case 0x9B:
@@ -630,6 +657,9 @@ static void next_char(struct mt_parser *self, unsigned char c)
 			mt_sbuf_cursor_up(self->sbuf);
 			self->state = VT_DEF;
 		break;
+		case 'P':
+			dcs_entry(self);
+		break;
 		case 'c':
 			/* RIS - Reset to Inital State */
 			mt_sbuf_RIS(self->sbuf);
@@ -663,6 +693,9 @@ static void next_char(struct mt_parser *self, unsigned char c)
 	break;
 	case VT_CSI:
 		csi(self, c);
+	break;
+	case VT_DCS:
+		dcs(self, c);
 	break;
 	case VT_OSC:
 		if (osc(self, c))
