@@ -52,6 +52,11 @@ struct mt_parser {
 	void (*response)(int fd, const char *string);
 	int response_fd;
 
+	/*
+	 * Bell callback.
+	 */
+	void (*bell)(void);
+
 	char csi_intermediate;
 	uint16_t pars[MT_MAX_CSI_PARS];
 	uint8_t par_cnt;

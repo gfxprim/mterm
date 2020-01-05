@@ -544,7 +544,8 @@ static void parser_ctrl_char(struct mt_parser *self, unsigned char c)
 	switch (c) {
 	/* BEL 0x07 */
 	case '\a':
-		fprintf(stderr, "Bell!\n");
+		if (self->bell)
+			self->bell();
 	break;
 	/* BS 0x08 */
 	case '\b':

@@ -36,6 +36,10 @@ static void make_buf(char *buf)
 				buf[out++] = '\t';
 				in+=2;
 			break;
+			case 'a':
+				buf[out++] = '\a';
+				in+=2;
+			break;
 			/* Two digit octal e.g. \016 */
 			case '0':
 				buf[out++] = 8*(buf[in+2] - '0') + buf[in+3] - '0';
@@ -94,6 +98,13 @@ static void track_cursor(mt_coord col, mt_coord row, uint8_t set)
 	}
 }
 
+static unsigned int bell_counter;
+
+static void bell(void)
+{
+	bell_counter++;
+}
+
 static struct mt_screen screen = {
 	.cursor = track_cursor,
 };
@@ -138,6 +149,8 @@ int main(int argc, char *argv[])
 
 	mt_parser_init(&parser, sbuf, 0, 0);
 
+	parser.bell = bell;
+
 	while (fgets(buf, sizeof(buf), f)) {
 		make_buf(buf);
 		mt_parse(&parser, buf, strlen(buf));
@@ -146,6 +159,9 @@ int main(int argc, char *argv[])
 	fclose(f);
 
 	mt_sbuf_dump_screen(sbuf);
+
+	if (bell_counter)
+		printf("Bells: %u\n", bell_counter);
 
 	free(sbuf->sbuf);
 	free(sbuf);

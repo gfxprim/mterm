@@ -449,6 +449,11 @@ static void writefd(int fd, const char *str)
 	write(fd, str, strlen(str));
 }
 
+static void bell(void)
+{
+	printf("Bell\n");
+}
+
 int main(void)
 {
 	gp_event ev;
@@ -459,6 +464,7 @@ int main(void)
 
 	parser.response_fd = fd;
 	parser.response = writefd;
+	parser.bell = bell;
 
 	init_graphics();
 
