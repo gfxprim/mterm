@@ -279,11 +279,19 @@ void mt_sbuf_cursor_set(struct mt_sbuf *self, mt_coord col, mt_coord row)
 {
 	unset_cursor(self);
 
-	if (col >= 0 && col < self->cols)
-		self->cur_col = col;
+	if (col >= 0) {
+		if (col < self->cols)
+			self->cur_col = col;
+		else
+			self->cur_col = self->rows - 1;
+	}
 
-	if (row >= 0 && row < self->rows)
-		self->cur_row = row;
+	if (row >= 0) {
+		if (row < self->rows)
+			self->cur_row = row;
+		else
+			self->cur_row = self->rows - 1;
+	}
 
 	set_cursor(self);
 }
