@@ -12,7 +12,7 @@ struct mt_sbuf;
 #define VT_STATE_MASK 0x0F
 
 enum mt_state {
-	VT_DEF = 0,
+	VT_GROUND = 0,
 
 	/* ESC */
 	VT_ESC = 0x01,

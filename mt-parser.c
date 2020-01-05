@@ -418,7 +418,7 @@ static void csi(struct mt_parser *self, char c)
 	if (self->state == VT_CSI_IGNORE) {
 		switch (c) {
 		case '@' ... '~':
-			self->state = VT_DEF;
+			self->state = VT_GROUND;
 			return;
 		}
 	}
@@ -439,7 +439,7 @@ static void csi(struct mt_parser *self, char c)
 
 		csi_dispatch(self, c);
 
-		self->state = VT_DEF;
+		self->state = VT_GROUND;
 		return;
 	/* DEL - ignored during CSI */
 	case 0x7F:
@@ -488,7 +488,7 @@ static void dcs(struct mt_parser *self, char c)
 {
 	switch (c) {
 	case '@' ... '~':
-		self->state = VT_DEF;
+		self->state = VT_GROUND;
 		return;
 	}
 }
@@ -569,7 +569,7 @@ static void esc_dispatch(struct mt_parser *self, char c)
 			fprintf(stderr, "Unhandled ESC %c %c\n", self->csi_intermediate, c);
 		}
 
-		self->state = VT_DEF;
+		self->state = VT_GROUND;
 		return;
 	}
 
@@ -613,7 +613,7 @@ static void esc_dispatch(struct mt_parser *self, char c)
 	break;
 	}
 
-	self->state = VT_DEF;
+	self->state = VT_GROUND;
 }
 
 static void esc(struct mt_parser *self, unsigned char c)
@@ -720,7 +720,7 @@ static void next_char(struct mt_parser *self, unsigned char c)
 	}
 
 	switch ((self->state & VT_STATE_MASK)) {
-	case VT_DEF:
+	case VT_GROUND:
 		switch (c) {
 		case ' ' ... 0x7F:
 			mt_sbuf_putc(self->sbuf, c);
@@ -741,11 +741,11 @@ static void next_char(struct mt_parser *self, unsigned char c)
 	break;
 	case VT_OSC:
 		if (osc(self, c))
-			self->state = VT_DEF;
+			self->state = VT_GROUND;
 	break;
 	case VT52_ESC_Y:
 		//if (vt52_esc_y(c))
-			self->state = VT_DEF;
+			self->state = VT_GROUND;
 	break;
 	default:
 		fprintf(stderr, "INVALID STATE %i\n", self->state);
