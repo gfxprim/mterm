@@ -248,6 +248,32 @@ static void csi_c(struct mt_parser *self)
 }
 
 /*
+ * VPA -- Vertical Line Position Absolute
+ *
+ * Sets column.
+ */
+static void csi_d(struct mt_parser *self)
+{
+	if (!self->pars[0])
+		self->pars[0] = 1;
+
+	mt_sbuf_cursor_set(self->sbuf, self->pars[0] - 1, -1);
+}
+
+/*
+ * VPR -- Vertical Line Position Relative
+ *
+ * Sets column.
+ */
+static void csi_e(struct mt_parser *self)
+{
+	if (!self->pars[0])
+		self->pars[0] = 1;
+
+	mt_sbuf_cursor_move(self->sbuf, self->pars[0], 0);
+}
+
+/*
  * CUP -- Cursor Position
  */
 void csi_H(struct mt_parser *self)
@@ -303,6 +329,12 @@ static void do_csi(struct mt_parser *self, char csi)
 	case 'c':
 		csi_c(self);
 	break;
+	case 'd':
+		csi_d(self);
+	break;
+	case 'e':
+		csi_e(self);
+	break;
 	case 'f':
 		csi_f(self);
 	break;
@@ -315,6 +347,10 @@ static void do_csi(struct mt_parser *self, char csi)
 	case 'l':
 	case 'h':
 		csi_lh(self, csi);
+	break;
+	/* xterm window manipulation */
+	case 't':
+		fprintf(stderr, "TODO: Xterm window manipulation!\n");
 	break;
 	default:
 		fprintf(stderr, "Unhandled CSI %c %02x\n", isprint(csi) ? csi : ' ', csi);
@@ -506,13 +542,12 @@ static void tab(struct mt_parser *self)
  * OSC 0; [title] \a     - set window tittle
  * OSC 52;c; [base64] \a - set clipboard
  */
-static int osc(struct mt_parser *self, char c)
+static void osc(struct mt_parser *self, char c)
 {
 	if (c == '\a')
-		return 1;
+		self->state = VT_GROUND;
 
 	//fprintf(stderr, "OSC '%c'\n", c);
-	return 0;
 }
 
 static void param_reset(struct mt_parser *self)
@@ -740,8 +775,7 @@ static void next_char(struct mt_parser *self, unsigned char c)
 		dcs(self, c);
 	break;
 	case VT_OSC:
-		if (osc(self, c))
-			self->state = VT_GROUND;
+		osc(self, c);
 	break;
 	case VT52_ESC_Y:
 		//if (vt52_esc_y(c))
