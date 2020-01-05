@@ -1,0 +1,22 @@
+10 10
+A B C D E
+\n\r
+A\e[2\bC
+B\e[2\bC
+C\e[2\bC
+D\e[2\bC
+E
+\n\r
+A \e[\r2C
+B \e[\r4C
+C \e[\r6C
+D \e[\r8C
+E
+\n\r
+\e[20l
+A \e[1\eA
+B \e[1\eA
+C \e[1\eA
+D \e[1\eA
+E
+\n\r
