@@ -13,8 +13,12 @@ struct mt_sbuf;
 
 enum mt_state {
 	VT_DEF = 0,
+
+	/* ESC */
 	VT_ESC = 0x01,
-	VT_ESC_DEC = 0x02,
+	VT_ESC_ENTRY = 0x01,
+
+	/* OSC */
 	VT_OSC = 0x03,
 
 	/* CSI */
@@ -31,8 +35,6 @@ enum mt_state {
 	VT_DCS_IGNORE = 0x25,
 	VT_DCS_INTERMEDIATE = 0x35,
 
-	VT_SCS_G0 = 0x08,
-	VT_SCS_G1 = 0x09,
 	VT52_ESC_Y = 0x0A,
 };
 

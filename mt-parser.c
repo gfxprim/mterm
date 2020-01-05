@@ -332,7 +332,7 @@ static void set_charset(struct mt_parser *self, uint8_t pos, char c)
 		mt_sbuf_set_charset(self->sbuf, pos, c);
 	break;
 	default:
-		fprintf(stderr, "Invalid G%i charset '%c'", pos, c);
+		fprintf(stderr, "Invalid G%i charset '%c'\n", pos, c);
 	break;
 	}
 }
@@ -536,6 +536,108 @@ static void dcs_entry(struct mt_parser *self)
 	param_reset(self);
 }
 
+static void esc_dec(struct mt_parser *self, char c)
+{
+	switch (c) {
+	/* DECALN - Fills screen with test aligment pattern + cursor home */
+	case '8':
+		//TODO: Fill screen with 'E'
+		mt_sbuf_cursor_set(self->sbuf, 0, 0);
+	break;
+	default:
+		fprintf(stderr, "Unhandled DEC ESC %c %02x\n", isprint(c) ? c : ' ', c);
+	}
+}
+
+static void esc_dispatch(struct mt_parser *self, char c)
+{
+	if (self->csi_intermediate) {
+		switch (self->csi_intermediate) {
+		/* SCS G0 */
+		case '(':
+			set_charset(self, 0, c);
+		break;
+		/* SCS G1 */
+		case ')':
+			set_charset(self, 1, c);
+		break;
+		/* DEC ESC */
+		case '#':
+			esc_dec(self, c);
+		break;
+		default:
+			fprintf(stderr, "Unhandled ESC %c %c\n", self->csi_intermediate, c);
+		}
+
+		self->state = VT_DEF;
+		return;
+	}
+
+	switch (c) {
+	case '[':
+		csi_entry(self);
+		return;
+	case ']':
+		self->state = VT_OSC;
+		return;
+	case '7':
+		fprintf(stderr, "TODO: Save cursor\n");
+	break;
+	case '8':
+		fprintf(stderr, "TODO: Restore cursor\n");
+	break;
+	case 'D':
+		/* IND - Index, moves cursor down - scrolls */
+		mt_sbuf_cursor_down(self->sbuf);
+	break;
+	case 'E':
+		/* NEL - Next line */
+		mt_sbuf_newline(self->sbuf);
+	break;
+	case 'M':
+		/* RI - Reverse Index, moves cursor up - scrolls */
+		mt_sbuf_cursor_up(self->sbuf);
+	break;
+	case 'P':
+		dcs_entry(self);
+		return;
+	case 'c':
+		/* RIS - Reset to Inital State */
+		mt_sbuf_RIS(self->sbuf);
+	break;
+	case '=': /* Set alternate keypad mode */
+	case '>': /* Set numeric keypad mode */
+	break;
+	default:
+		fprintf(stderr, "Unhandled ESC %c %02x\n", isprint(c) ? c : ' ', c);
+	break;
+	}
+
+	self->state = VT_DEF;
+}
+
+static void esc(struct mt_parser *self, unsigned char c)
+{
+	switch (c) {
+	/* 0x20 - 0x2F */
+	case ' ' ... '/':
+		self->csi_intermediate = c;
+	break;
+	/* 0x30 - 0x7E */
+	case '0' ... '~':
+		esc_dispatch(self, c);
+	break;
+	case 0x7F:
+	break;
+	}
+}
+
+static void esc_entry(struct mt_parser *self)
+{
+	self->state = VT_ESC_ENTRY;
+	self->csi_intermediate = 0;
+}
+
 /*
  * Some control chanracters may be interleaved with CSIs
  */
@@ -569,7 +671,7 @@ static void parser_ctrl_char(struct mt_parser *self, unsigned char c)
 	break;
 	/* ESC 0x1B */
 	case '\e':
-		self->state = VT_ESC;
+		esc_entry(self);
 	break;
 	case '\f':
 	case '\v':
@@ -629,75 +731,7 @@ static void next_char(struct mt_parser *self, unsigned char c)
 		}
 	break;
 	case VT_ESC:
-		switch (c) {
-		case '[':
-			csi_entry(self);
-		break;
-		case ']':
-			self->state = VT_OSC;
-		break;
-		case '(':
-			self->state = VT_SCS_G0;
-		break;
-		case ')':
-			self->state = VT_SCS_G1;
-		break;
-		case '7':
-			fprintf(stderr, "TODO: Save cursor\n");
-			self->state = VT_DEF;
-		break;
-		case '8':
-			fprintf(stderr, "TODO: Restore cursor\n");
-			self->state = VT_DEF;
-		break;
-		case 'D':
-			/* IND - Index, moves cursor down - scrolls */
-			mt_sbuf_cursor_down(self->sbuf);
-			self->state = VT_DEF;
-		break;
-		case 'E':
-			/* NEL - Next line */
-			mt_sbuf_newline(self->sbuf);
-			self->state = VT_DEF;
-		break;
-		case 'M':
-			/* RI - Reverse Index, moves cursor up - scrolls */
-			mt_sbuf_cursor_up(self->sbuf);
-			self->state = VT_DEF;
-		break;
-		case 'P':
-			dcs_entry(self);
-		break;
-		case 'c':
-			/* RIS - Reset to Inital State */
-			mt_sbuf_RIS(self->sbuf);
-			self->state = VT_DEF;
-		break;
-		case '=': /* Set alternate keypad mode */
-		case '>': /* Set numeric keypad mode */
-			self->state = VT_DEF;
-		break;
-		case '#':
-			self->state = VT_ESC_DEC;
-		break;
-		default:
-			fprintf(stderr, "Unhandled ESC %c %02x\n", isprint(c) ? c : ' ', c);
-			self->state = VT_DEF;
-		break;
-		}
-	break;
-	case VT_ESC_DEC:
-		switch (c) {
-		/* DECALN - Fills screen with test aligment pattern + cursor home */
-		case '8':
-			//TODO: Fill screen with 'E'
-			mt_sbuf_cursor_set(self->sbuf, 0, 0);
-		break;
-		default:
-			fprintf(stderr, "Unhandled DEC ESC %c %02x\n", isprint(c) ? c : ' ', c);
-		}
-
-		self->state = VT_DEF;
+		esc(self, c);
 	break;
 	case VT_CSI:
 		csi(self, c);
@@ -708,14 +742,6 @@ static void next_char(struct mt_parser *self, unsigned char c)
 	case VT_OSC:
 		if (osc(self, c))
 			self->state = VT_DEF;
-	break;
-	case VT_SCS_G0:
-		set_charset(self, 0, c);
-		self->state = VT_DEF;
-	break;
-	case VT_SCS_G1:
-		set_charset(self, 1, c);
-		self->state = VT_DEF;
 	break;
 	case VT52_ESC_Y:
 		//if (vt52_esc_y(c))
