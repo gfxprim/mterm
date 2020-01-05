@@ -601,13 +601,20 @@ static void next_char(struct mt_parser *self, unsigned char c)
 	//fprintf(stderr, "0x%02x %c\n", c, isprint(c) ? c : ' ');
 
 	/*
-	 * Control characters are processed immediately.
+	 * Control characters are processed immediately unless in OSC or DCS.
 	 */
-	switch (c) {
-		case CONTROL_C0:
-		case CONTROL_C1:
-			parser_ctrl_char(self, c);
-		return;
+	switch (self->state & VT_STATE_MASK) {
+	case VT_OSC:
+	case VT_DCS:
+	break;
+	default:
+		switch (c) {
+			case CONTROL_C0:
+			case CONTROL_C1:
+				parser_ctrl_char(self, c);
+			return;
+		}
+	break;
 	}
 
 	switch ((self->state & VT_STATE_MASK)) {
