@@ -9,6 +9,8 @@
 
 struct mt_sbuf;
 
+#define VT_STATE_MASK 0x0F
+
 enum mt_state {
 	VT_DEF = 0,
 	VT_ESC = 0x01,
@@ -16,6 +18,7 @@ enum mt_state {
 	VT_OSC = 0x03,
 
 	/* CSI */
+	VT_CSI = 0x04,
 	VT_CSI_ENTRY = 0x04,
 	VT_CSI_PARAM = 0x14,
 	VT_CSI_IGNORE = 0x24,

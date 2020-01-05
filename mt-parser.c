@@ -440,11 +440,6 @@ static void csi(struct mt_parser *self, char c)
 		csi_dispatch(self, c);
 
 		self->state = VT_DEF;
-
-		memset(self->pars, 0, sizeof(self->pars));
-		self->csi_intermediate = 0;
-		self->par_cnt = 0;
-		self->par_t = 0;
 		return;
 	/* DEL - ignored during CSI */
 	case 0x7F:
@@ -461,7 +456,7 @@ static void csi(struct mt_parser *self, char c)
 		break;
 		case '<' ... '?':
 			self->csi_intermediate = c;
-			self->state = VT_CSI_PARAM;	
+			self->state = VT_CSI_PARAM;
 		break;
 		}
 	break;
@@ -508,6 +503,16 @@ static int osc(struct mt_parser *self, char c)
 	return 0;
 }
 
+static void csi_entry(struct mt_parser *self)
+{
+	self->state = VT_CSI_ENTRY;
+
+	memset(self->pars, 0, sizeof(self->pars));
+	self->csi_intermediate = 0;
+	self->par_cnt = 0;
+	self->par_t = 0;
+}
+
 /*
  * Some control chanracters may be interleaved with CSIs
  */
@@ -549,7 +554,7 @@ static void parser_ctrl_char(struct mt_parser *self, unsigned char c)
 	break;
 	/* CSI */
 	case 0x9B:
-		self->state = VT_CSI_ENTRY;
+		csi_entry(self);
 	break;
 	/* OSC */
 	case 0x9D:
@@ -560,8 +565,8 @@ static void parser_ctrl_char(struct mt_parser *self, unsigned char c)
 	}
 }
 
-#define CONTROL_C0 0x00 ... 0x1f
-#define CONTROL_C1 0x80 ... 0x9f
+#define CONTROL_C0 0x00 ... 0x1F
+#define CONTROL_C1 0x80 ... 0x9F
 
 static void next_char(struct mt_parser *self, unsigned char c)
 {
@@ -577,18 +582,21 @@ static void next_char(struct mt_parser *self, unsigned char c)
 		return;
 	}
 
-	switch ((self->state & 0x0f)) {
+	switch ((self->state & VT_STATE_MASK)) {
 	case VT_DEF:
 		switch (c) {
-		default:
+		case ' ' ... 0x7F:
 			mt_sbuf_putc(self->sbuf, c);
+		break;
+		default:
+			fprintf(stderr, "Unhandled char 0x%02x\n", c);
 		break;
 		}
 	break;
 	case VT_ESC:
 		switch (c) {
 		case '[':
-			self->state = VT_CSI_ENTRY;
+			csi_entry(self);
 		break;
 		case ']':
 			self->state = VT_OSC;
@@ -653,7 +661,7 @@ static void next_char(struct mt_parser *self, unsigned char c)
 
 		self->state = VT_DEF;
 	break;
-	case VT_CSI_ENTRY:
+	case VT_CSI:
 		csi(self, c);
 	break;
 	case VT_OSC:
