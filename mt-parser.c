@@ -384,11 +384,17 @@ static void do_csi_dec(struct mt_parser *self, char c)
 
 	for (i = 0; i < self->par_cnt; i++) {
 		switch (self->pars[i]) {
-		case 25:
-			mt_sbuf_cursor_visible(self->sbuf, val);
+		case 1:
+			fprintf(stderr, "TODO: Normal Cursor Keys %c\n", c);
+		break;
+		case 7:
+			fprintf(stderr, "TODO: Autowrap %c\n", c);
 		break;
 		case 12:
 			fprintf(stderr, "TODO: Cursor blink %c\n", c);
+		break;
+		case 25:
+			mt_sbuf_cursor_visible(self->sbuf, val);
 		break;
 		case 2004:
 			fprintf(stderr, "TODO: Bracketed paste mode %c\n", c);
@@ -703,6 +709,10 @@ static void parser_ctrl_char(struct mt_parser *self, unsigned char c)
 	/* SI 0x0F */
 	case '\017':
 		mt_sbuf_shift_in(self->sbuf);
+	break;
+	/* CAN 0x18 - Cancel ESC, CSI, DCS */
+	case 0x18:
+		self->state = VT_GROUND;
 	break;
 	/* ESC 0x1B */
 	case '\e':
