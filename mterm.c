@@ -151,7 +151,7 @@ static void do_scroll_up(int lines)
 		return;
 
 	gp_pixel bg = bg_col(mt_sbuf_cur_char(sbuf));
-	int col; 
+	int col;
 
 	//TODO: Reverse blit?
 	for (col = end_y/cell_h + lines - 1; col >= 0; col--) {

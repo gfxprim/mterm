@@ -53,6 +53,7 @@ struct mt_sbuf {
 	uint8_t sel_charset;
 
 	uint8_t cursor_hidden:1;
+	uint8_t autowrap:1;
 
 	struct mt_char cur_char;
 
@@ -85,6 +86,11 @@ static inline void mt_sbuf_shift_in(struct mt_sbuf *self)
 static inline void mt_sbuf_shift_out(struct mt_sbuf *self)
 {
 	self->sel_charset = 1;
+}
+
+static inline void mt_sbuf_autowrap(struct mt_sbuf *self, uint8_t autowrap)
+{
+	self->autowrap = !!autowrap;
 }
 
 /*

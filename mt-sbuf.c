@@ -12,6 +12,7 @@ struct mt_sbuf *mt_sbuf_alloc(void)
 		return NULL;
 
 	memset(self, 0, sizeof(*self));
+	self->autowrap = 1;
 
 	return self;
 }
@@ -262,7 +263,8 @@ void mt_sbuf_cursor_inc(struct mt_sbuf *self)
 			self->cur_col--;
 		} else {
 			self->cur_col = 0;
-			self->cur_row++;
+			if (self->autowrap)
+				self->cur_row++;
 		}
 
 	}

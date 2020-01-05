@@ -387,8 +387,9 @@ static void do_csi_dec(struct mt_parser *self, char c)
 		case 1:
 			fprintf(stderr, "TODO: Normal Cursor Keys %c\n", c);
 		break;
+		/* DECAWM -- Autowrap Mode */
 		case 7:
-			fprintf(stderr, "TODO: Autowrap %c\n", c);
+			mt_sbuf_autowrap(self->sbuf, val);
 		break;
 		case 12:
 			fprintf(stderr, "TODO: Cursor blink %c\n", c);
