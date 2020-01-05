@@ -235,6 +235,20 @@ static void csi_lh(struct mt_parser *self, char csi)
 }
 
 /*
+ * REP - Repeat preceding graphic char.
+ */
+static void csi_b(struct mt_parser *self)
+{
+	unsigned int i;
+
+	if (!self->last_gchar)
+		return;
+
+	for (i = 0; i < self->pars[0]; i++)
+		mt_sbuf_putc(self->sbuf, self->last_gchar);
+}
+
+/*
  * DA - Device Attribute
  *
  * Sends device attributes to application.
@@ -325,6 +339,9 @@ static void do_csi(struct mt_parser *self, char csi)
 	break;
 	case 'K':
 		csi_K(self);
+	break;
+	case 'b':
+		csi_b(self);
 	break;
 	case 'c':
 		csi_c(self);
@@ -770,6 +787,7 @@ static void next_char(struct mt_parser *self, unsigned char c)
 		switch (c) {
 		case ' ' ... 0x7F:
 			mt_sbuf_putc(self->sbuf, c);
+			self->last_gchar = c;
 		break;
 		default:
 			fprintf(stderr, "Unhandled char 0x%02x\n", c);

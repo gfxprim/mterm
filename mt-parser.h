@@ -49,6 +49,11 @@ struct mt_parser {
 	uint8_t par_t:1;
 
 	/*
+	 * Last graphic character for REP (CSI b)
+	 */
+	char last_gchar;
+
+	/*
 	 * Callback to optionally send response to application.
 	 */
 	void (*response)(int fd, const char *string);
