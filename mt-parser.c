@@ -271,7 +271,7 @@ static void csi_d(struct mt_parser *self)
 	if (!self->pars[0])
 		self->pars[0] = 1;
 
-	mt_sbuf_cursor_set(self->sbuf, self->pars[0] - 1, -1);
+	mt_sbuf_cursor_set(self->sbuf, -1, self->pars[0] - 1);
 }
 
 /*
@@ -284,7 +284,7 @@ static void csi_e(struct mt_parser *self)
 	if (!self->pars[0])
 		self->pars[0] = 1;
 
-	mt_sbuf_cursor_move(self->sbuf, self->pars[0], 0);
+	mt_sbuf_cursor_move(self->sbuf, 0, self->pars[0]);
 }
 
 /*
@@ -390,12 +390,33 @@ static void set_charset(struct mt_parser *self, uint8_t pos, char c)
 	}
 }
 
+/*
+ * DEC private modes
+ *
+ * 1  -> Normal Cursor Keys (DECCKM)
+ * 7  -> No Wraparound Mode (DECAWM)
+ * 25 -> ide Cursor (DECTCEM)
+ *
+ * s == save
+ * r == restore
+ * l == disable
+ * h == enable
+ */
 static void do_csi_dec(struct mt_parser *self, char c)
 {
 	unsigned int i;
 
-	if (c != 'l' && c != 'h')
+	switch (c) {
+	case 's':
+	case 'r':
+		fprintf(stderr, "DEC CSI save/restore\n");
+		return;
+	case 'l':
+	case 'h':
+	break;
+	default:
 		fprintf(stderr, "Invalid DECCSI priv %c\n", c);
+	}
 
 	uint8_t val = c == 'l' ? 0 : 1;
 

@@ -25,7 +25,7 @@ for i in *.in; do
 	fi
 	if ! diff tmp $OUT &> /dev/null; then
 		echo "************** $i **************"
-		diff -u tmp $OUT
+		diff -u $OUT tmp
 		echo "************************************"
 		failed=$((failed+1))
 	else

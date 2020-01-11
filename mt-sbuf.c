@@ -285,7 +285,7 @@ void mt_sbuf_cursor_set(struct mt_sbuf *self, mt_coord col, mt_coord row)
 		if (col < self->cols)
 			self->cur_col = col;
 		else
-			self->cur_col = self->rows - 1;
+			self->cur_col = self->cols - 1;
 	}
 
 	if (row >= 0) {
