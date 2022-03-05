@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
+/*
+ * Copyright (C) 2019-2022 Cyril Hrubis <metan@ucw.cz>
+ */
 #include "mt-screen.h"
 
 void mt_damage_merge(struct mt_damage *self,
