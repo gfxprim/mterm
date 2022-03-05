@@ -23,7 +23,7 @@ for i in *.in; do
 			cp tmp "$OUT"
 		fi
 	fi
-	if ! diff tmp $OUT &> /dev/null; then
+	if ! diff tmp $OUT 2>&1 > /dev/null; then
 		echo "************** $i **************"
 		diff -u $OUT tmp
 		echo "************************************"
