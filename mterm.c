@@ -72,8 +72,9 @@ static gp_backend *win;
 static struct mt_damage damage;
 static struct mt_sbuf *sbuf;
 
-#define FONT_DEF gp_font_haxor_narrow_17
-#define FONT_BOLD gp_font_haxor_narrow_bold_17
+
+static const gp_font_face *font_normal;
+static const gp_font_face *font_bold;
 
 static void draw_char(struct mt_char *c, gp_coord col, gp_coord row)
 {
@@ -81,9 +82,9 @@ static void draw_char(struct mt_char *c, gp_coord col, gp_coord row)
 	gp_coord sy = row * cell_h;
 
 	if (mt_char_bold(c))
-		style.font = FONT_BOLD;
+		style.font = font_bold;
 	else
-		style.font = FONT_DEF;
+		style.font = font_normal;
 
 	gp_pixel bg = bg_col(c);
 	gp_pixel fg = fg_col(c);
@@ -92,7 +93,7 @@ static void draw_char(struct mt_char *c, gp_coord col, gp_coord row)
 		MT_SWAP(bg, fg);
 
 	gp_fill_rect_xyxy(win->pixmap, sx, sy, sx + cell_w-1, sy + cell_h-1, bg);
-	gp_print(win->pixmap, &style, sx, sy, GP_VALIGN_BELOW | GP_ALIGN_RIGHT,
+	gp_print(win->pixmap, &style, sx, sy, GP_VALIGN_BELOW | GP_ALIGN_RIGHT | GP_TEXT_BEARING,
 		 fg, 0, "%c", mt_char_c(c));
 }
 
@@ -263,11 +264,10 @@ static void vt_putc(int fd, char c)
 
 static void event_to_vt(gp_event *ev, int fd)
 {
-	int ctrl = gp_event_get_key(ev, GP_KEY_RIGHT_CTRL) ||
-		   gp_event_get_key(ev, GP_KEY_LEFT_CTRL);
+	int ctrl = gp_event_any_key_pressed(ev, GP_KEY_RIGHT_CTRL, GP_KEY_LEFT_CTRL);
 
 	if (ctrl) {
-		switch (ev->val.key.ascii) {
+		switch (ev->key.ascii) {
 		case ' ': /* Ctrl + space -> NUL */
 			vt_putc(fd, 0x00);
 		break;
@@ -279,7 +279,7 @@ static void event_to_vt(gp_event *ev, int fd)
 		break;
 		/* Ctrl + a-z are mapped to various control codes */
 		case 'a' ... 'z':
-			vt_putc(fd, ev->val.key.ascii - 'a' + 1);
+			vt_putc(fd, ev->key.ascii - 'a' + 1);
 		break;
 		case '\\': /* Ctrl + \ -> FS */
 			vt_putc(fd, 0x1c);
@@ -295,12 +295,12 @@ static void event_to_vt(gp_event *ev, int fd)
 		return;
 	}
 
-	if (ev->val.key.ascii) {
-		vt_putc(fd, ev->val.key.ascii);
+	if (ev->key.ascii) {
+		vt_putc(fd, ev->key.ascii);
 		return;
 	}
 
-	switch (ev->val.key.key) {
+	switch (ev->key.key) {
 	case GP_KEY_UP:
 		vt_write(fd, "\eOA", 3);
 	break;
@@ -372,8 +372,8 @@ static void resize(int fd, gp_event *ev)
 {
 	struct winsize w;
 
-	cols = ev->val.sys.w/cell_w;
-	rows = ev->val.sys.h/cell_h;
+	cols = ev->sys.w/cell_w;
+	rows = ev->sys.h/cell_h;
 
 	w.ws_col = cols;
 	w.ws_row = rows;
@@ -417,8 +417,17 @@ int run_vt_shell(void)
 void init_graphics(void)
 {
 	gp_size w, h;
+	const gp_font_family *font_family;
 
-	style.font = FONT_DEF;
+	font_family = gp_font_family_lookup("haxor-narrow-18");
+
+	if (!font_family)
+		font_family = gp_font_family_default;
+
+	font_normal = gp_font_family_face_lookup(font_family, GP_FONT_MONO | GP_FONT_REGULAR);
+	font_bold = gp_font_family_face_lookup(font_family, GP_FONT_MONO | GP_FONT_BOLD | GP_FONT_FALLBACK);
+
+	style.font = font_normal;
 
 	cell_h = gp_font_height(style.font);
 	cell_w = gp_font_max_width(style.font);
@@ -456,7 +465,7 @@ static void bell(void)
 
 int main(void)
 {
-	gp_event ev;
+	gp_event *ev;
 	int fd;
 
 	fd = run_vt_shell();
@@ -469,16 +478,16 @@ int main(void)
 	init_graphics();
 
 	for (;;) {
-		while (gp_backend_poll_event(win, &ev)) {
-			switch (ev.type) {
+		while ((ev = gp_backend_poll_event(win))) {
+			switch (ev->type) {
 			case GP_EV_KEY:
-				if (ev.code == GP_EV_KEY_DOWN)
-					event_to_vt(&ev, fd);
+				if (ev->code == GP_EV_KEY_DOWN)
+					event_to_vt(ev, fd);
 			break;
 #ifdef MT_RESIZE
 			case GP_EV_SYS:
-				if (ev.code == GP_EV_SYS_RESIZE)
-					resize(fd, &ev);
+				if (ev->code == GP_EV_SYS_RESIZE)
+					resize(fd, ev);
 			break;
 #endif
 			}
