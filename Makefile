@@ -1,7 +1,7 @@
 all: mterm_col mterm-test mterm test
 
 CFLAGS+=-ggdb -W -Wextra $(shell gfxprim-config --cflags)
-LDFLAGS+=$(shell gfxprim-config --libs --libs-backends) -lutil
+LDLIBS+=$(shell gfxprim-config --libs --libs-backends) -lutil
 
 mterm_col.o: CFLAGS+=-DMT_COLORS -DMT_RESIZE
 
