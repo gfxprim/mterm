@@ -266,44 +266,8 @@ static void vt_putc(int fd, char c)
 	vt_write(fd, &c, 1);
 }
 
-static void event_to_vt(gp_event *ev, int fd)
+static void key_to_vt(gp_event *ev, int fd)
 {
-	int ctrl = gp_event_any_key_pressed(ev, GP_KEY_RIGHT_CTRL, GP_KEY_LEFT_CTRL);
-
-	if (ctrl) {
-		switch (ev->key.ascii) {
-		case ' ': /* Ctrl + space -> NUL */
-			vt_putc(fd, 0x00);
-		break;
-		case '\t': /* Ctrl + tab -> HT */
-			vt_putc(fd, 0x09);
-		break;
-		case '\n': /* Ctrl + \n -> CR */
-			vt_putc(fd, '\r');
-		break;
-		/* Ctrl + a-z are mapped to various control codes */
-		case 'a' ... 'z':
-			vt_putc(fd, ev->key.ascii - 'a' + 1);
-		break;
-		case '\\': /* Ctrl + \ -> FS */
-			vt_putc(fd, 0x1c);
-		break;
-		case '`': /* Ctrl + ` -> RS */
-			vt_putc(fd, 0x1e);
-		break;
-		case '/': /* Ctrl + / -> US */
-			vt_putc(fd, 0x1f);
-		break;
-		}
-
-		return;
-	}
-
-	if (ev->key.ascii) {
-		vt_putc(fd, ev->key.ascii);
-		return;
-	}
-
 	switch (ev->key.key) {
 	case GP_KEY_UP:
 		vt_write(fd, "\eOA", 3);
@@ -369,6 +333,13 @@ static void event_to_vt(gp_event *ev, int fd)
 		vt_write(fd, "\e[24~", 5);
 	break;
 	}
+}
+
+static void utf_to_vt(gp_event *ev, int fd)
+{
+	int ctrl = gp_ev_any_key_pressed(ev, GP_KEY_RIGHT_CTRL, GP_KEY_LEFT_CTRL);
+
+	vt_putc(fd, ev->utf.ch);
 }
 
 #ifdef MT_RESIZE
@@ -483,10 +454,14 @@ int main(void)
 
 	for (;;) {
 		while ((ev = gp_backend_poll_event(win))) {
+			gp_ev_dump(ev);
 			switch (ev->type) {
+			case GP_EV_UTF:
+				utf_to_vt(ev, fd);
+			break;
 			case GP_EV_KEY:
 				if (ev->code == GP_EV_KEY_DOWN)
-					event_to_vt(ev, fd);
+					key_to_vt(ev, fd);
 			break;
 #ifdef MT_RESIZE
 			case GP_EV_SYS:
